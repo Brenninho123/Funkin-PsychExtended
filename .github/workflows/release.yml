@@ -1,12 +1,11 @@
 name: Release
 on: workflow_dispatch
 
-permissions:
-  contents: write
-  discussions: write
+
+permissions: write-all
 
 env:
-  PROJECT_NAME: PsychEngine
+  PROJECT_NAME: PsychEngine0.7.3
 
 jobs:
   build:
