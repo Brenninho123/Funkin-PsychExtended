@@ -1,43 +1,51 @@
-name: Main
-on: workflow_dispatch
+name: Build Android
 
-# permissions: write-all
+on:
+  workflow_dispatch:
+
+env:
+  HAXE_VERSION: 4.3.2
 
 jobs:
-  Build:
-    name: ${{ matrix.name }}
-    strategy:
-      matrix:
-        include:
-          - name: Windows
-            os: windows-2022
-            buildArgs: windows
-            artifactName: Windows
-            artifactPath: export\release\windows\bin\*
-          - name: Linux
-            os: ubuntu-22.04
-            buildArgs: linux
-            artifactName: Linux
-            artifactPath: export/release/linux/bin/*
-          - name: MacOS
-            os: macos-15
-            buildArgs: mac
-            artifactName: MacOS
-            artifactPath: export/release/macos/bin/*
-          - name: Android
-            os: macos-15
-            buildArgs: "android -ONLY_ARM64"
-            artifactName: Android
-            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-          - name: iOS
-            os: macos-15
-            buildArgs: "ios -nosign"
-            artifactName: IOS
-            artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-    uses: ./.github/workflows/build.yml
-    with:
-        name: ${{ matrix.name }}
-        os: ${{ matrix.os }}
-        buildArgs: ${{ matrix.buildArgs }}
-        artifactName: ${{ matrix.artifactName }}
-        artifactPath: ${{ matrix.artifactPath }}
+  android:
+    name: Android
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install Libraries
+        run: |
+          haxelib install hmm --quiet
+          haxelib run hmm install --quiet
+
+      - name: Configure Android
+        run: |
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME
+          haxelib run lime config ANDROID_SETUP true
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkeypair -v -keystore key.keystore -storetype JKS \
+            -alias psychengine -storepass psychengine -keypass psychengine \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=PsychEngine, O=Dev, C=BR"
+
+      - name: Compile
+        run: haxelib run lime build android -release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Android
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
