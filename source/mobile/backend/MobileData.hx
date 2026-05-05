@@ -1,58 +1,38 @@
-/*
- * Copyright (C) 2024 Mobile Porting Team
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- */
-
 package mobile.backend;
 
-import haxe.ds.Map;
 import haxe.Json;
 import haxe.io.Path;
 import openfl.utils.Assets;
+import flixel.math.FlxPoint;
 import flixel.util.FlxSave;
+#if MODS_ALLOWED
+import sys.FileSystem;
+import sys.io.File;
+#end
 
-/**
- * ...
- * @author: Karim Akra
- */
 class MobileData
 {
 	public static var actionModes:Map<String, TouchButtonsData> = new Map();
-	public static var dpadModes:Map<String, TouchButtonsData> = new Map();
-	public static var extraActions:Map<String, ExtraActions> = new Map();
+	public static var dpadModes:Map<String, TouchButtonsData>   = new Map();
+	public static var extraActions:Map<String, ExtraActions>    = new Map();
 
-	public static var mode(get, set):Int;
-	public static var forcedMode:Null<Int>;
+	public static var forcedMode:Null<Int> = null;
 	public static var save:FlxSave;
 
-	public static function init()
+	public static var mode(get, set):Int;
+
+	public static function init():Void
 	{
 		save = new FlxSave();
 		save.bind('MobileControls', CoolUtil.getSavePath());
 
-		readDirectory(Paths.getSharedPath('mobile/DPadModes'), dpadModes);
-		readDirectory(Paths.getSharedPath('mobile/ActionModes'), actionModes);
+		readDirectory(Paths.getSharedPath('mobile/DPadModes'),    dpadModes);
+		readDirectory(Paths.getSharedPath('mobile/ActionModes'),  actionModes);
+
 		#if MODS_ALLOWED
 		for (folder in Mods.directoriesWithFile(Paths.getSharedPath(), 'mobile/'))
 		{
-			readDirectory(Path.join([folder, 'DPadModes']), dpadModes);
+			readDirectory(Path.join([folder, 'DPadModes']),   dpadModes);
 			readDirectory(Path.join([folder, 'ActionModes']), actionModes);
 		}
 		#end
@@ -64,19 +44,13 @@ class MobileData
 	public static function setTouchPadCustom(touchPad:TouchPad):Void
 	{
 		if (save.data.buttons == null)
-		{
 			save.data.buttons = new Array();
-			for (buttons in touchPad)
-				save.data.buttons.push(FlxPoint.get(buttons.x, buttons.y));
-		}
-		else
+
+		var i:Int = 0;
+		for (button in touchPad)
 		{
-			var tempCount:Int = 0;
-			for (buttons in touchPad)
-			{
-				save.data.buttons[tempCount] = FlxPoint.get(buttons.x, buttons.y);
-				tempCount++;
-			}
+			save.data.buttons[i] = FlxPoint.get(button.x, button.y);
+			i++;
 		}
 
 		save.flush();
@@ -84,19 +58,19 @@ class MobileData
 
 	public static function getTouchPadCustom(touchPad:TouchPad):TouchPad
 	{
-		var tempCount:Int = 0;
-
 		if (save.data.buttons == null)
 			return touchPad;
 
-		for (buttons in touchPad)
+		var i:Int = 0;
+		for (button in touchPad)
 		{
-			if (save.data.buttons[tempCount] != null)
+			var saved = save.data.buttons[i];
+			if (saved != null)
 			{
-				buttons.x = save.data.buttons[tempCount].x;
-				buttons.y = save.data.buttons[tempCount].y;
+				button.x = saved.x;
+				button.y = saved.y;
 			}
-			tempCount++;
+			i++;
 		}
 
 		return touchPad;
@@ -104,57 +78,98 @@ class MobileData
 
 	public static function setButtonsColors(buttonsInstance:Dynamic):Dynamic
 	{
-		// Dynamic Controls Color
-		var data:Dynamic;
-		if (ClientPrefs.data.dynamicColors)
-			data = ClientPrefs.data;
-		else
-			data = ClientPrefs.defaultData;
+		var data:Dynamic = ClientPrefs.data.dynamicColors ? ClientPrefs.data : ClientPrefs.defaultData;
 
-		for (i => button in [
+		var noteButtons:Array<Dynamic> = [
 			buttonsInstance.buttonLeft,
 			buttonsInstance.buttonDown,
 			buttonsInstance.buttonUp,
-			buttonsInstance.buttonRight])
+			buttonsInstance.buttonRight
+		];
+
+		for (i in 0...noteButtons.length)
 		{
-			button.color = data.arrowRGB[i][0];
-			button.label.color = data.arrowRGB[i][0];
-			button.label.updateColorTransform();
+			var btn = noteButtons[i];
+			if (btn == null) continue;
+
+			var color:Int = data.arrowRGB[i][0];
+			btn.color = color;
+
+			if (btn.label != null)
+			{
+				btn.label.color = color;
+				btn.label.updateColorTransform();
+			}
 		}
 
 		return buttonsInstance;
 	}
 
-	public static function readDirectory(folder:String, map:Dynamic)
+	public static function readDirectory(folder:String, map:Map<String, TouchButtonsData>):Void
 	{
 		folder = folder.contains(':') ? folder.split(':')[1] : folder;
 
-		#if MODS_ALLOWED if (FileSystem.exists(folder)) #end
+		#if MODS_ALLOWED
+		if (!FileSystem.exists(folder)) return;
+		#end
+
 		for (file in Paths.readDirectory(folder))
 		{
-			var fileWithNoLib:String = file.contains(':') ? file.split(':')[1] : file;
-			if (Path.extension(fileWithNoLib) == 'json')
+			var filePath     = file.contains(':') ? file.split(':')[1] : file;
+			var fullPath     = Path.join([folder, Path.withoutDirectory(file)]);
+			var ext          = Path.extension(filePath);
+			var key          = Path.withoutExtension(Path.withoutDirectory(filePath));
+
+			if (ext != 'json') continue;
+
+			var content:String =
+				#if MODS_ALLOWED
+				File.getContent(fullPath);
+				#else
+				Assets.getText(fullPath);
+				#end
+
+			if (content == null || content.length == 0) continue;
+
+			try
 			{
-				file = Path.join([folder, Path.withoutDirectory(file)]);
-				var str = #if MODS_ALLOWED File.getContent(file) #else Assets.getText(file) #end;
-				var json:TouchButtonsData = cast Json.parse(str);
-				var mapKey:String = Path.withoutDirectory(Path.withoutExtension(fileWithNoLib));
-				map.set(mapKey, json);
+				var parsed:TouchButtonsData = cast Json.parse(content);
+				map.set(key, parsed);
+			}
+			catch (e)
+			{
+				trace('MobileData: failed to parse $fullPath — $e');
 			}
 		}
 	}
 
-	static function set_mode(mode:Int = 3)
+	public static function reset():Void
 	{
-		save.data.mobileControlsMode = mode;
-		save.flush();
-		return mode;
+		if (save != null)
+		{
+			save.data.mobileControlsMode = 3;
+			save.data.buttons = null;
+			save.flush();
+		}
+	}
+
+	static function set_mode(value:Int):Int
+	{
+		if (save != null)
+		{
+			save.data.mobileControlsMode = value;
+			save.flush();
+		}
+		return value;
 	}
 
 	static function get_mode():Int
 	{
 		if (forcedMode != null)
 			return forcedMode;
+
+		if (save == null)
+			return 3;
 
 		if (save.data.mobileControlsMode == null)
 		{
@@ -173,11 +188,11 @@ typedef TouchButtonsData =
 
 typedef ButtonsData =
 {
-	button:String, // what TouchButton should be used, must be a valid TouchButton var from TouchPad as a string.
-	graphic:String, // the graphic of the button, usually can be located in the TouchPad xml .
-	x:Float, // the button's X position on screen.
-	y:Float, // the button's Y position on screen.
-	color:String // the button color, default color is white.
+	var button:String;
+	var graphic:String;
+	var x:Float;
+	var y:Float;
+	var color:String;
 }
 
 enum ExtraActions
