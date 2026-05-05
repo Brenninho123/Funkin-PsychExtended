@@ -9,7 +9,7 @@ env:
 jobs:
   android:
     name: Android
-    runs-on: macos-15
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
