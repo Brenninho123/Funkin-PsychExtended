@@ -9,16 +9,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: Windows x64
+          - name: Windows
             os: windows-2022
             buildArgs: windows
-            artifactName: Windows x64
+            artifactName: Windows
             artifactPath: export\release\windows\bin\*
-          - name: Windows x32
-            os: windows-2022
-            buildArgs: "windows -32 -D HXCPP_M32 -D 32bits"
-            artifactName: Windows x32
-            artifactPath: export\32bit\windows\bin\*
           - name: Linux
             os: ubuntu-22.04
             buildArgs: linux
@@ -31,7 +26,7 @@ jobs:
             artifactPath: export/release/macos/bin/*
           - name: Android
             os: macos-15
-            buildArgs: "android -ONLY_ARMV7"
+            buildArgs: "android -ONLY_ARM64"
             artifactName: Android
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
           - name: iOS
