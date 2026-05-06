@@ -214,7 +214,7 @@ class MainMenuState extends MusicBeatState
 
 	function _buildHUD()
 	{
-		engineText = new FlxText(12, FlxG.height - 28, 0, 'Psych Engine v$psychEngineVersion', 12);
+		engineText = new FlxText(12, FlxG.height - 28, 0, 'Psych Extended v$psychEngineVersion', 12);
 		engineText.scrollFactor.set();
 		engineText.setFormat('VCR OSD Mono', 13, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		engineText.borderSize = 1.5;
