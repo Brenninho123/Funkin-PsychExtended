@@ -3,6 +3,7 @@ package states;
 import backend.WeekData;
 import backend.Highscore;
 
+import flixel.FlxObject;
 import flixel.input.keyboard.FlxKey;
 import flixel.addons.transition.FlxTransitionableState;
 import flixel.graphics.frames.FlxAtlasFrames;
@@ -343,7 +344,7 @@ class TitleState extends MusicBeatState
 	var transitioning:Bool = false;
 	private static var playJingle:Bool = false;
 
-	var newTitle:Bool   = false;
+	var newTitle:Bool    = false;
 	var titleTimer:Float = 0;
 
 	override function update(elapsed:Float)
@@ -397,7 +398,6 @@ class TitleState extends MusicBeatState
 				FlxG.sound.play(Paths.sound('confirmMenu'), 0.7);
 
 				_flashLogoOnPress();
-
 				transitioning = true;
 
 				new FlxTimer().start(1, function(_)
@@ -441,9 +441,9 @@ class TitleState extends MusicBeatState
 
 							FlxG.sound.music.fadeOut();
 							if (FreeplayState.vocals != null) FreeplayState.vocals.fadeOut();
-							closedState    = true;
-							transitioning  = true;
-							playJingle     = true;
+							closedState   = true;
+							transitioning = true;
+							playJingle    = true;
 							easterEggKeysBuffer = '';
 							break;
 						}
@@ -560,7 +560,7 @@ class TitleState extends MusicBeatState
 		var membersToDelete = textGroup.members.copy();
 		for (basicMember in membersToDelete)
 		{
-			var member = cast(basicMember, FlxObject);
+			var member:FlxSprite = Std.downcast(basicMember, FlxSprite);
 			if (member == null) continue;
 
 			FlxTween.tween(member, {alpha: 0, y: member.y - 20}, 0.25, {
@@ -656,8 +656,8 @@ class TitleState extends MusicBeatState
 		}
 	}
 
-	var skippedIntro:Bool   = false;
-	var increaseVolume:Bool = false;
+	var skippedIntro:Bool    = false;
+	var increaseVolume:Bool  = false;
 
 	function skipIntro():Void
 	{
