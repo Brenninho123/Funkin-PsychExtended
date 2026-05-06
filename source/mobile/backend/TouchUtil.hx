@@ -13,7 +13,6 @@ class TouchUtil
 	public static var justReleased(get, never):Bool;
 	public static var released(get, never):Bool;
 	public static var touch(get, never):Null<FlxTouch>;
-
 	public static var touchCount(get, never):Int;
 	public static var hasTouches(get, never):Bool;
 
@@ -40,8 +39,7 @@ class TouchUtil
 				for (touch in FlxG.touches.list)
 				{
 					if (touch == null) continue;
-					@:privateAccess
-					touch.getWorldPosition(cam, point);
+					@:privateAccess touch.getWorldPosition(cam, point);
 					@:privateAccess
 					if (object.overlapsPoint(point, true, cam))
 					{
@@ -56,8 +54,7 @@ class TouchUtil
 			for (touch in FlxG.touches.list)
 			{
 				if (touch == null) continue;
-				@:privateAccess
-				touch.getWorldPosition(camera, point);
+				@:privateAccess touch.getWorldPosition(camera, point);
 				@:privateAccess
 				if (object.overlapsPoint(point, true, camera))
 				{
@@ -106,7 +103,7 @@ class TouchUtil
 	{
 		var t = touch != null ? touch : get_touch();
 		if (t == null) return FlxPoint.get(0, 0);
-		return FlxPoint.get(t.screenX - t.lastScreenX, t.screenY - t.lastScreenY);
+		return FlxPoint.get(t.deltaScreenX, t.deltaScreenY);
 	}
 
 	public static function getCentroid():FlxPoint
