@@ -99,13 +99,6 @@ class TouchUtil
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
-	public static function getSwipeDelta(?touch:FlxTouch):FlxPoint
-	{
-		var t = touch != null ? touch : get_touch();
-		if (t == null) return FlxPoint.get(0, 0);
-		return FlxPoint.get(t.deltaScreenX, t.deltaScreenY);
-	}
-
 	public static function getCentroid():FlxPoint
 	{
 		var list = FlxG.touches.list;
