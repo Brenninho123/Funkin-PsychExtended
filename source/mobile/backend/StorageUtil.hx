@@ -235,8 +235,8 @@ class StorageUtil
 enum abstract StorageType(String) from String to String
 {
 	static inline final FORCED_PATH:String  = '/storage/emulated/0/';
-	static inline final PKG_NAME:String     = 'com.brenninho.psychengine';
-	static inline final FILE_NAME:String    = 'PsychEngine';
+	static inline final PKG_NAME:String     = 'com.brenninho.psychextended';
+	static inline final FILE_NAME:String    = 'PsychExtended';
 
 	var EXTERNAL_DATA  = "EXTERNAL_DATA";
 	var EXTERNAL_OBB   = "EXTERNAL_OBB";
