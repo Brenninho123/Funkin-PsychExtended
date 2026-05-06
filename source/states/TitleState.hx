@@ -275,7 +275,7 @@ class TitleState extends MusicBeatState
 		blackScreen = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		credGroup.add(blackScreen);
 
-		credTextShit         = new Alphabet(0, 0, "", true);
+		credTextShit = new Alphabet(0, 0, "", true);
 		credTextShit.screenCenter();
 		credTextShit.visible = false;
 
@@ -310,7 +310,6 @@ class TitleState extends MusicBeatState
 		glowPulse = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, 0xFF00AAFF);
 		glowPulse.scrollFactor.set();
 		glowPulse.alpha = 0;
-		glowPulse.blend  = openfl.display.BlendMode.ADD;
 
 		bgParticles = new FlxTypedGroup<FlxSprite>();
 		for (i in 0...18)
@@ -344,7 +343,7 @@ class TitleState extends MusicBeatState
 	var transitioning:Bool = false;
 	private static var playJingle:Bool = false;
 
-	var newTitle:Bool = false;
+	var newTitle:Bool   = false;
 	var titleTimer:Float = 0;
 
 	override function update(elapsed:Float)
@@ -442,9 +441,9 @@ class TitleState extends MusicBeatState
 
 							FlxG.sound.music.fadeOut();
 							if (FreeplayState.vocals != null) FreeplayState.vocals.fadeOut();
-							closedState = true;
-							transitioning = true;
-							playJingle = true;
+							closedState    = true;
+							transitioning  = true;
+							playJingle     = true;
 							easterEggKeysBuffer = '';
 							break;
 						}
@@ -523,9 +522,9 @@ class TitleState extends MusicBeatState
 		{
 			var money:Alphabet = new Alphabet(0, 0, textArray[i], true);
 			money.screenCenter(X);
-			money.y     += (i * 60) + 200 + offset;
-			money.alpha  = 0;
-			money.x     -= 80;
+			money.y    += (i * 60) + 200 + offset;
+			money.alpha = 0;
+			money.x    -= 80;
 
 			FlxTween.tween(money, {alpha: 1, x: money.x + 80}, 0.4, {
 				ease: FlxEase.expoOut,
@@ -558,8 +557,12 @@ class TitleState extends MusicBeatState
 
 	function deleteCoolText()
 	{
-		for (member in textGroup.members.copy())
+		var membersToDelete = textGroup.members.copy();
+		for (basicMember in membersToDelete)
 		{
+			var member = cast(basicMember, FlxObject);
+			if (member == null) continue;
+
 			FlxTween.tween(member, {alpha: 0, y: member.y - 20}, 0.25, {
 				ease: FlxEase.quadIn,
 				onComplete: function(_)
@@ -627,8 +630,8 @@ class TitleState extends MusicBeatState
 				case 8:
 					addMoreText('newgrounds', -40);
 					ngSpr.visible = true;
+					ngSpr.alpha   = 0;
 					FlxTween.tween(ngSpr, {alpha: 1}, 0.4, {ease: FlxEase.quadOut});
-					ngSpr.alpha = 0;
 				case 9:
 					deleteCoolText();
 					FlxTween.tween(ngSpr, {alpha: 0}, 0.25, {
@@ -653,7 +656,7 @@ class TitleState extends MusicBeatState
 		}
 	}
 
-	var skippedIntro:Bool  = false;
+	var skippedIntro:Bool   = false;
 	var increaseVolume:Bool = false;
 
 	function skipIntro():Void
@@ -673,7 +676,7 @@ class TitleState extends MusicBeatState
 				case 'BBPANZU': sound = FlxG.sound.play(Paths.sound('JingleBB'));
 				default:
 					_flashSkipIntro(4);
-					playJingle = false;
+					playJingle   = false;
 					skippedIntro = true;
 					FlxG.sound.playMusic(Paths.music('freakyMenu'), 0);
 					FlxG.sound.music.fadeIn(4, 0, 0.7);
