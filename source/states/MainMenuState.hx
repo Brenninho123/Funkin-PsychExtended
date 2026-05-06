@@ -200,8 +200,8 @@ class MainMenuState extends MusicBeatState
 			var menuItem = new FlxSprite(0, (i * 140) + offset);
 			menuItem.antialiasing = ClientPrefs.data.antialiasing;
 			menuItem.frames = Paths.getSparrowAtlas('mainmenu/menu_' + optionShit[i]);
-			menuItem.animation.addByPrefix('idle',     optionShit[i] + " basic",  24);
-			menuItem.animation.addByPrefix('selected', optionShit[i] + " white",  24);
+			menuItem.animation.addByPrefix('idle',     optionShit[i] + " basic", 24);
+			menuItem.animation.addByPrefix('selected', optionShit[i] + " white", 24);
 			menuItem.animation.play('idle');
 			menuItem.scrollFactor.set(0, optionShit.length < 6 ? 0 : (optionShit.length - 4) * 0.135);
 			menuItem.updateHitbox();
@@ -221,7 +221,7 @@ class MainMenuState extends MusicBeatState
 		engineText.alpha = 0;
 		add(engineText);
 
-		versionText = new FlxText(FlxG.width - 12, FlxG.height - 28, 0, "v" + Application.current.meta.get('version'), 12);
+		versionText = new FlxText(FlxG.width - 12, FlxG.height - 28, 0, 'v' + Application.current.meta.get('version'), 12);
 		versionText.scrollFactor.set();
 		versionText.setFormat('VCR OSD Mono', 13, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		versionText.borderSize = 1.5;
@@ -268,7 +268,7 @@ class MainMenuState extends MusicBeatState
 	{
 		FlxTween.tween(bg,         {alpha: 0},  0.4, {ease: FlxEase.quadIn});
 		FlxTween.tween(bgGrid,     {alpha: 0},  0.3, {ease: FlxEase.quadIn});
-		FlxTween.tween(sideAccent, {x: -3},     0.35,{ease: FlxEase.expoIn});
+		FlxTween.tween(sideAccent, {x: -3},     0.35, {ease: FlxEase.expoIn});
 		FlxTween.tween(bottomBar,  {y: FlxG.height}, 0.35, {ease: FlxEase.expoIn});
 		FlxTween.tween(engineText,  {alpha: 0}, 0.25, {ease: FlxEase.quadIn});
 		FlxTween.tween(versionText, {alpha: 0}, 0.25, {ease: FlxEase.quadIn});
@@ -276,15 +276,16 @@ class MainMenuState extends MusicBeatState
 		for (i in 0...menuItems.members.length)
 		{
 			if (i == curSelected) continue;
-			FlxTween.tween(menuItems.members[i], {alpha: 0, x: menuItems.members[i].x + 300}, 0.3,
-				{ease: FlxEase.expoIn, startDelay: i * 0.025,
-				 onComplete: function(_) { menuItems.members[i].kill(); }});
+			var item = menuItems.members[i];
+			FlxTween.tween(item, {alpha: 0, x: item.x + 300}, 0.3, {
+				ease: FlxEase.expoIn,
+				startDelay: i * 0.025,
+				onComplete: function(_) { item.kill(); }
+			});
 		}
 
 		new FlxTimer().start(0.45, function(_) { onDone(); });
 	}
-
-	var selectedSomethin:Bool = false;
 
 	override function update(elapsed:Float)
 	{
@@ -300,7 +301,7 @@ class MainMenuState extends MusicBeatState
 				FreeplayState.vocals.volume += 0.5 * elapsed;
 		}
 
-		var lerpVal = CoolUtil.boundTo(elapsed * 7.5, 0, 1);
+		var lerpVal = FlxMath.bound(elapsed * 7.5, 0, 1);
 		camFollowPos.setPosition(
 			FlxMath.lerp(camFollowPos.x, camFollow.x, lerpVal),
 			FlxMath.lerp(camFollowPos.y, camFollow.y, lerpVal)
@@ -448,8 +449,8 @@ class MainMenuState extends MusicBeatState
 
 		for (i in 0...menuItems.members.length)
 		{
-			var item   = menuItems.members[i];
-			var isSel  = (i == curSelected);
+			var item  = menuItems.members[i];
+			var isSel = (i == curSelected);
 			FlxTween.cancelTweensOf(item, ['alpha']);
 			FlxTween.tween(item, {alpha: isSel ? 1.0 : 0.5}, 0.15, {ease: FlxEase.quadOut});
 		}
@@ -460,8 +461,7 @@ class MainMenuState extends MusicBeatState
 			sel.getGraphicMidpoint().y - (menuItems.length > 4 ? menuItems.length * 8 : 0)
 		);
 
-		var pulse = FlxColor.fromInt(0xFFfd719b).getLightened(0.15);
 		FlxTween.cancelTweensOf(sideAccent, ['color']);
-		FlxTween.color(sideAccent, 0.3, sideAccent.color, pulse);
+		FlxTween.color(sideAccent, 0.3, sideAccent.color, FlxColor.fromInt(0xFFfd719b).getLightened(0.15));
 	}
 }
