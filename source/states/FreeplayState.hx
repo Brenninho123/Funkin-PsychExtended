@@ -69,6 +69,7 @@ class FreeplayState extends MusicBeatState
 
 	var missingTextBG:FlxSprite;
 	var missingText:FlxText;
+	public var bottomString:String = '';
 	var bottomText:FlxText;
 	var bottomBG:FlxSprite;
 
@@ -336,8 +337,10 @@ class FreeplayState extends MusicBeatState
 		bottomBG.alpha = 0;
 		add(bottomBG);
 
-		bottomText = new FlxText(0, FlxG.height - 24, FlxG.width,
-			'$btnSpace: Preview  |  $btnCtrl: Options  |  $btnReset: Reset  |  ◄►: Difficulty', 12);
+		var leText = '$btnSpace: Preview  |  $btnCtrl: Options  |  $btnReset: Reset  |  ◄►: Difficulty';
+		bottomString = leText;
+
+		bottomText = new FlxText(0, FlxG.height - 24, FlxG.width, leText, 12);
 		bottomText.setFormat(Paths.font('vcr.ttf'), 12, 0xFF78909C, CENTER);
 		bottomText.scrollFactor.set();
 		bottomText.alpha = 0;
@@ -375,12 +378,12 @@ class FreeplayState extends MusicBeatState
 		FlxTween.tween(selectedGlow, {alpha: 0.3}, 0.4, {ease: FlxEase.quadOut, startDelay: 0.2});
 		FlxTween.tween(cardTag,      {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.25});
 
-		FlxTween.tween(scoreBG,    {alpha: 0.6}, 0.4, {ease: FlxEase.quadOut, startDelay: 0.25});
-		FlxTween.tween(scoreText,  {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.28});
-		FlxTween.tween(diffText,   {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.3});
-		FlxTween.tween(songCountText,{alpha: 1}, 0.4, {ease: FlxEase.quadOut, startDelay: 0.32});
-		FlxTween.tween(bottomBG,   {alpha: 0.6}, 0.4, {ease: FlxEase.quadOut, startDelay: 0.3});
-		FlxTween.tween(bottomText, {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.32});
+		FlxTween.tween(scoreBG,      {alpha: 0.6}, 0.4, {ease: FlxEase.quadOut, startDelay: 0.25});
+		FlxTween.tween(scoreText,    {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.28});
+		FlxTween.tween(diffText,     {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.3});
+		FlxTween.tween(songCountText,{alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.32});
+		FlxTween.tween(bottomBG,     {alpha: 0.6}, 0.4, {ease: FlxEase.quadOut, startDelay: 0.3});
+		FlxTween.tween(bottomText,   {alpha: 1},   0.4, {ease: FlxEase.quadOut, startDelay: 0.32});
 
 		for (i in 0...particles.members.length)
 			FlxTween.tween(particles.members[i],
@@ -393,13 +396,13 @@ class FreeplayState extends MusicBeatState
 
 	function _playExitAnim(onDone:Void->Void)
 	{
-		FlxTween.tween(bg,        {alpha: 0},  0.4, {ease: FlxEase.quadIn});
-		FlxTween.tween(bgGrid,    {alpha: 0},  0.3, {ease: FlxEase.quadIn});
-		FlxTween.tween(topBar,    {y: -54},    0.4, {ease: FlxEase.expoIn});
-		FlxTween.tween(accentBar, {y: -3},     0.4, {ease: FlxEase.expoIn});
-		FlxTween.tween(sideLine,  {x: -3},     0.35,{ease: FlxEase.expoIn});
-		FlxTween.tween(bottomBar, {y: FlxG.height}, 0.35, {ease: FlxEase.expoIn});
-		FlxTween.tween(titleText, {y: -50, alpha: 0}, 0.3, {ease: FlxEase.expoIn});
+		FlxTween.tween(bg,         {alpha: 0},  0.4, {ease: FlxEase.quadIn});
+		FlxTween.tween(bgGrid,     {alpha: 0},  0.3, {ease: FlxEase.quadIn});
+		FlxTween.tween(topBar,     {y: -54},    0.4, {ease: FlxEase.expoIn});
+		FlxTween.tween(accentBar,  {y: -3},     0.4, {ease: FlxEase.expoIn});
+		FlxTween.tween(sideLine,   {x: -3},     0.35,{ease: FlxEase.expoIn});
+		FlxTween.tween(bottomBar,  {y: FlxG.height}, 0.35, {ease: FlxEase.expoIn});
+		FlxTween.tween(titleText,  {y: -50, alpha: 0}, 0.3, {ease: FlxEase.expoIn});
 		FlxTween.tween(selectedCard,{alpha: 0}, 0.3, {ease: FlxEase.quadIn});
 		FlxTween.tween(selectedGlow,{alpha: 0}, 0.3, {ease: FlxEase.quadIn});
 		FlxTween.tween(cardTag,     {alpha: 0}, 0.3, {ease: FlxEase.quadIn});
@@ -686,8 +689,8 @@ class FreeplayState extends MusicBeatState
 		if (player.playingMusic) return;
 
 		curDifficulty += change;
-		if (curDifficulty < 0)                         curDifficulty = Difficulty.list.length - 1;
-		if (curDifficulty >= Difficulty.list.length)   curDifficulty = 0;
+		if (curDifficulty < 0)                       curDifficulty = Difficulty.list.length - 1;
+		if (curDifficulty >= Difficulty.list.length) curDifficulty = 0;
 
 		#if !switch
 		intendedScore  = Highscore.getScore(songs[curSelected].songName,  curDifficulty);
@@ -736,7 +739,7 @@ class FreeplayState extends MusicBeatState
 
 		songCountText.text = (curSelected + 1) + ' / ' + songs.length;
 
-		var wIdx = songs[curSelected].week;
+		var wIdx  = songs[curSelected].week;
 		var wName = (wIdx < WeekData.weeksList.length && WeekData.weeksLoaded.exists(WeekData.weeksList[wIdx]))
 			? WeekData.weeksLoaded.get(WeekData.weeksList[wIdx]).weekName : '';
 		weekText.text = wName.toUpperCase();
@@ -768,25 +771,24 @@ class FreeplayState extends MusicBeatState
 
 	private function positionHighscore()
 	{
-		scoreText.x      = FlxG.width - scoreText.width - 6;
-		scoreBG.scale.x  = FlxG.width - scoreText.x + 6;
-		scoreBG.x        = FlxG.width - scoreBG.scale.x / 2;
-		diffText.x       = Std.int(scoreBG.x + scoreBG.width / 2 - diffText.width / 2);
+		scoreText.x     = FlxG.width - scoreText.width - 6;
+		scoreBG.scale.x = FlxG.width - scoreText.x + 6;
+		scoreBG.x       = FlxG.width - scoreBG.scale.x / 2;
+		diffText.x      = Std.int(scoreBG.x + scoreBG.width / 2 - diffText.width / 2);
 	}
 
 	public function updateTexts(elapsed:Float = 0.0)
 	{
 		lerpSelected = FlxMath.lerp(curSelected, lerpSelected, Math.exp(-elapsed * 9.6));
 
-		var cardY = (lerpSelected * 1.3 - lerpSelected) * 80 + 200;
 		if (grpSongs.members.length > 0)
 		{
 			var selItem = grpSongs.members[curSelected];
 			if (selItem != null && selItem.visible)
 			{
-				selectedCard.y  = selItem.y - 2;
-				selectedGlow.y  = selItem.y - 4;
-				cardTag.y       = selItem.y - 2;
+				selectedCard.y = selItem.y - 2;
+				selectedGlow.y = selItem.y - 4;
+				cardTag.y      = selItem.y - 2;
 			}
 		}
 
@@ -810,8 +812,7 @@ class FreeplayState extends MusicBeatState
 			var isSel = (i == curSelected);
 			item.alpha = FlxMath.lerp(item.alpha, isSel ? 1.0 : 0.45, 0.25);
 
-			var icon:HealthIcon = iconArray[i];
-			icon.visible = icon.active = true;
+			iconArray[i].visible = iconArray[i].active = true;
 			_lastVisibles.push(i);
 		}
 	}
@@ -827,11 +828,11 @@ class FreeplayState extends MusicBeatState
 
 class SongMetadata
 {
-	public var songName:String      = '';
-	public var week:Int             = 0;
-	public var songCharacter:String = '';
-	public var color:Int            = -7179779;
-	public var folder:String        = '';
+	public var songName:String       = '';
+	public var week:Int              = 0;
+	public var songCharacter:String  = '';
+	public var color:Int             = -7179779;
+	public var folder:String         = '';
 	public var lastDifficulty:String = null;
 
 	public function new(song:String, week:Int, songCharacter:String, color:Int)
