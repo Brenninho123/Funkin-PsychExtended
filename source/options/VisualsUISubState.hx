@@ -38,7 +38,11 @@ class VisualsUISubState extends BaseOptionsMenu
 		option.maxValue    = 1.0;
 		option.changeValue = 0.05;
 		option.decimals    = 2;
-		option.onChange    = function() { AudioAPI.masterVolume = ClientPrefs.data.masterVolume; };
+		option.onChange    = function()
+		{
+			if (AudioAPI.initialized)
+				AudioAPI.masterVolume = ClientPrefs.data.masterVolume;
+		};
 		addOption(option);
 
 		var option:Option = new Option('Music Volume',
@@ -49,7 +53,11 @@ class VisualsUISubState extends BaseOptionsMenu
 		option.maxValue    = 1.0;
 		option.changeValue = 0.05;
 		option.decimals    = 2;
-		option.onChange    = function() { AudioAPI.setMusicVolume(ClientPrefs.data.musicVolume); };
+		option.onChange    = function()
+		{
+			if (AudioAPI.initialized)
+				AudioAPI.setMusicVolume(ClientPrefs.data.musicVolume);
+		};
 		addOption(option);
 
 		var option:Option = new Option('SFX Volume',
@@ -60,7 +68,11 @@ class VisualsUISubState extends BaseOptionsMenu
 		option.maxValue    = 1.0;
 		option.changeValue = 0.05;
 		option.decimals    = 2;
-		option.onChange    = function() { AudioAPI.setSFXVolume(ClientPrefs.data.sfxVolume); };
+		option.onChange    = function()
+		{
+			if (AudioAPI.initialized)
+				AudioAPI.setSFXVolume(ClientPrefs.data.sfxVolume);
+		};
 		addOption(option);
 
 		var option:Option = new Option('Vocal Volume',
@@ -71,13 +83,21 @@ class VisualsUISubState extends BaseOptionsMenu
 		option.maxValue    = 1.0;
 		option.changeValue = 0.05;
 		option.decimals    = 2;
-		option.onChange    = function() { AudioAPI.setVocalVolume(ClientPrefs.data.vocalVolume); };
+		option.onChange    = function()
+		{
+			if (AudioAPI.initialized)
+				AudioAPI.setVocalVolume(ClientPrefs.data.vocalVolume);
+		};
 		addOption(option);
 
 		var option:Option = new Option('Mute Audio',
 			'If checked, mutes all game audio.',
 			'masterMuted', 'bool');
-		option.onChange = function() { AudioAPI.masterMuted = ClientPrefs.data.masterMuted; };
+		option.onChange = function()
+		{
+			if (AudioAPI.initialized)
+				AudioAPI.masterMuted = ClientPrefs.data.masterMuted;
+		};
 		addOption(option);
 
 		var option:Option = new Option('EQ Preset',
@@ -85,7 +105,7 @@ class VisualsUISubState extends BaseOptionsMenu
 			'eqPreset', 'string', eqPresets);
 		option.onChange = function()
 		{
-			if (ClientPrefs.data.eqPreset != null)
+			if (AudioAPI.initialized && ClientPrefs.data.eqPreset != null)
 				AudioAPI.eqPreset(ClientPrefs.data.eqPreset.toLowerCase());
 		};
 		addOption(option);
