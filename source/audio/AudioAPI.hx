@@ -1,7 +1,5 @@
 package audio;
 
-import backend.ClientPrefs;
-
 import flixel.FlxG;
 import flixel.sound.FlxSound;
 import flixel.tweens.FlxEase;
@@ -39,7 +37,7 @@ class AudioAPI
 	static var _chorusWet:Float = 0.0;
 
 	static var _recordingBuffer:Array<Float> = [];
-	static var _isRecording:Bool = false;
+	static var _isRecording:Bool    = false;
 	static var _recordSampleRate:Int = 44100;
 	static var _recordStartTime:Float = 0.0;
 
@@ -56,11 +54,11 @@ class AudioAPI
 	public static function loadPrefs():Void
 	{
 		if (ClientPrefs.data == null) return;
-		masterVolume = ClientPrefs.data.masterVolume != null ? ClientPrefs.data.masterVolume : 1.0;
-		musicVolume  = ClientPrefs.data.musicVolume  != null ? ClientPrefs.data.musicVolume  : 1.0;
-		sfxVolume    = ClientPrefs.data.sfxVolume    != null ? ClientPrefs.data.sfxVolume    : 1.0;
-		vocalVolume  = ClientPrefs.data.vocalVolume  != null ? ClientPrefs.data.vocalVolume  : 1.0;
-		masterMuted  = ClientPrefs.data.masterMuted  != null ? ClientPrefs.data.masterMuted  : false;
+		masterVolume = ClientPrefs.data.masterVolume;
+		musicVolume  = ClientPrefs.data.musicVolume;
+		sfxVolume    = ClientPrefs.data.sfxVolume;
+		vocalVolume  = ClientPrefs.data.vocalVolume;
+		masterMuted  = ClientPrefs.data.masterMuted;
 	}
 
 	public static function savePrefs():Void
@@ -121,10 +119,7 @@ class AudioAPI
 		if (duration > 0)
 		{
 			var from = musicVolume;
-			FlxTween.num(from, vol, duration, {ease: FlxEase.quadOut}, function(v:Float)
-			{
-				musicVolume = v;
-			});
+			FlxTween.num(from, vol, duration, {ease: FlxEase.quadOut}, function(v:Float) { musicVolume = v; });
 		}
 		else
 			musicVolume = vol;
@@ -135,10 +130,7 @@ class AudioAPI
 		if (duration > 0)
 		{
 			var from = sfxVolume;
-			FlxTween.num(from, vol, duration, {ease: FlxEase.quadOut}, function(v:Float)
-			{
-				sfxVolume = v;
-			});
+			FlxTween.num(from, vol, duration, {ease: FlxEase.quadOut}, function(v:Float) { sfxVolume = v; });
 		}
 		else
 			sfxVolume = vol;
@@ -149,10 +141,7 @@ class AudioAPI
 		if (duration > 0)
 		{
 			var from = vocalVolume;
-			FlxTween.num(from, vol, duration, {ease: FlxEase.quadOut}, function(v:Float)
-			{
-				vocalVolume = v;
-			});
+			FlxTween.num(from, vol, duration, {ease: FlxEase.quadOut}, function(v:Float) { vocalVolume = v; });
 		}
 		else
 			vocalVolume = vol;
@@ -200,7 +189,8 @@ class AudioAPI
 			if (to   != null) to.volume   = _clamp(startToVol  * t,          0.0, 1.0);
 		});
 
-		FlxTween.num(0.0, 1.0, duration, {ease: FlxEase.sineInOut,
+		FlxTween.num(0.0, 1.0, duration, {
+			ease: FlxEase.sineInOut,
 			onComplete: function(_)
 			{
 				if (from != null) { from.stop(); from.volume = startFromVol; }
@@ -235,8 +225,8 @@ class AudioAPI
 		_refreshBus(_registeredMusic, musicVolume);
 	}
 
-	public static function mute():Void   { masterMuted = true;  }
-	public static function unmute():Void { masterMuted = false; }
+	public static function mute():Void    { masterMuted = true;  }
+	public static function unmute():Void  { masterMuted = false; }
 	public static function toggleMute():Void { masterMuted = !masterMuted; }
 
 	public static function setEQ(?low:Float = 1.0, ?mid:Float = 1.0, ?high:Float = 1.0):Void
@@ -254,7 +244,6 @@ class AudioAPI
 			case 'bass boost':   setEQ(1.8, 1.0, 0.8);
 			case 'treble boost': setEQ(0.8, 1.0, 1.8);
 			case 'vocal boost':  setEQ(0.9, 1.6, 1.1);
-			case 'flat':         setEQ(1.0, 1.0, 1.0);
 			case 'cinema':       setEQ(1.4, 1.2, 0.9);
 			case 'game':         setEQ(1.2, 1.0, 1.3);
 			default:             setEQ(1.0, 1.0, 1.0);
@@ -263,12 +252,11 @@ class AudioAPI
 
 	static function _applyEQ():Void
 	{
-		var combined = (_eqLow + _eqMid + _eqHigh) / 3.0;
-		combined = _clamp(combined, 0.0, 1.0);
+		var combined = _clamp((_eqLow + _eqMid + _eqHigh) / 3.0, 0.0, 1.0);
 		var transform = SoundMixer.soundTransform;
 		if (transform != null)
 		{
-			transform.volume = _clamp(masterVolume * combined, 0.0, 1.0);
+			transform.volume    = _clamp(masterVolume * combined, 0.0, 1.0);
 			SoundMixer.soundTransform = transform;
 		}
 	}
@@ -302,32 +290,32 @@ class AudioAPI
 
 	public static function stopAll():Void
 	{
-		for (snd in _registeredSounds)  if (snd != null) snd.stop();
-		for (snd in _registeredMusic)   if (snd != null) snd.stop();
-		for (snd in _registeredVocals)  if (snd != null) snd.stop();
+		for (snd in _registeredSounds) if (snd != null) snd.stop();
+		for (snd in _registeredMusic)  if (snd != null) snd.stop();
+		for (snd in _registeredVocals) if (snd != null) snd.stop();
 	}
 
 	public static function pauseAll():Void
 	{
-		for (snd in _registeredSounds)  if (snd != null && snd.playing) snd.pause();
-		for (snd in _registeredMusic)   if (snd != null && snd.playing) snd.pause();
-		for (snd in _registeredVocals)  if (snd != null && snd.playing) snd.pause();
+		for (snd in _registeredSounds) if (snd != null && snd.playing) snd.pause();
+		for (snd in _registeredMusic)  if (snd != null && snd.playing) snd.pause();
+		for (snd in _registeredVocals) if (snd != null && snd.playing) snd.pause();
 	}
 
 	public static function resumeAll():Void
 	{
-		for (snd in _registeredSounds)  if (snd != null) snd.resume();
-		for (snd in _registeredMusic)   if (snd != null) snd.resume();
-		for (snd in _registeredVocals)  if (snd != null) snd.resume();
+		for (snd in _registeredSounds) if (snd != null) snd.resume();
+		for (snd in _registeredMusic)  if (snd != null) snd.resume();
+		for (snd in _registeredVocals) if (snd != null) snd.resume();
 	}
 
 	public static function startRecording(?sampleRate:Int = 44100):Void
 	{
 		if (_isRecording) return;
-		_isRecording       = true;
-		_recordSampleRate  = sampleRate;
-		_recordStartTime   = haxe.Timer.stamp();
-		_recordingBuffer   = [];
+		_isRecording      = true;
+		_recordSampleRate = sampleRate;
+		_recordStartTime  = haxe.Timer.stamp();
+		_recordingBuffer  = [];
 	}
 
 	public static function stopRecording():Array<Float>
@@ -359,10 +347,10 @@ class AudioAPI
 		#if sys
 		try
 		{
-			var numSamples  = buffer.length;
-			var byteRate    = _recordSampleRate * 2;
-			var dataSize    = numSamples * 2;
-			var totalSize   = 44 + dataSize;
+			var numSamples = buffer.length;
+			var byteRate   = _recordSampleRate * 2;
+			var dataSize   = numSamples * 2;
+			var totalSize  = 44 + dataSize;
 
 			var bytes = new haxe.io.BytesOutput();
 			bytes.writeString('RIFF');
@@ -397,21 +385,21 @@ class AudioAPI
 	public static function getInfo():Dynamic
 	{
 		return {
-			masterVolume:    masterVolume,
-			masterMuted:     masterMuted,
-			masterPan:       masterPan,
-			musicVolume:     musicVolume,
-			sfxVolume:       sfxVolume,
-			vocalVolume:     vocalVolume,
-			eqLow:           _eqLow,
-			eqMid:           _eqMid,
-			eqHigh:          _eqHigh,
-			reverbWet:       _reverbWet,
-			chorusWet:       _chorusWet,
-			isRecording:     _isRecording,
-			registeredSFX:   _registeredSounds.length,
-			registeredMusic: _registeredMusic.length,
-			registeredVocals:_registeredVocals.length
+			masterVolume:     masterVolume,
+			masterMuted:      masterMuted,
+			masterPan:        masterPan,
+			musicVolume:      musicVolume,
+			sfxVolume:        sfxVolume,
+			vocalVolume:      vocalVolume,
+			eqLow:            _eqLow,
+			eqMid:            _eqMid,
+			eqHigh:           _eqHigh,
+			reverbWet:        _reverbWet,
+			chorusWet:        _chorusWet,
+			isRecording:      _isRecording,
+			registeredSFX:    _registeredSounds.length,
+			registeredMusic:  _registeredMusic.length,
+			registeredVocals: _registeredVocals.length
 		};
 	}
 
@@ -421,11 +409,11 @@ class AudioAPI
 		if (_duckTween  != null) { _duckTween.cancel();  _duckTween  = null; }
 		if (_fadeTween  != null) { _fadeTween.cancel();  _fadeTween  = null; }
 		if (_crossTween != null) { _crossTween.cancel(); _crossTween = null; }
-		_registeredSounds  = [];
-		_registeredMusic   = [];
-		_registeredVocals  = [];
-		_recordingBuffer   = [];
-		_isRecording       = false;
+		_registeredSounds = [];
+		_registeredMusic  = [];
+		_registeredVocals = [];
+		_recordingBuffer  = [];
+		_isRecording      = false;
 		masterVolume = 1.0;
 		musicVolume  = 1.0;
 		sfxVolume    = 1.0;
