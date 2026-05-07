@@ -96,14 +96,14 @@ class OptionsState extends MusicBeatState
 
 		switch (label)
 		{
-			case 'Note Colors':         openSubState(new options.NotesSubState());
-			case 'Controls':            openSubState(new options.ControlsSubState());
-			case 'Graphics':            openSubState(new options.GraphicsSettingsSubState());
-			case 'Visuals and UI':      openSubState(new options.VisualsUISubState());
-			case 'Gameplay':            openSubState(new options.GameplaySettingsSubState());
+			case 'Note Colors':            openSubState(new options.NotesSubState());
+			case 'Controls':               openSubState(new options.ControlsSubState());
+			case 'Graphics':               openSubState(new options.GraphicsSettingsSubState());
+			case 'Visuals and UI':         openSubState(new options.VisualsUISubState());
+			case 'Gameplay':               openSubState(new options.GameplaySettingsSubState());
 			case 'Adjust Delay and Combo': MusicBeatState.switchState(new options.NoteOffsetState());
 			#if mobile
-			case 'Mobile Options':      openSubState(new mobile.options.MobileOptionsSubState());
+			case 'Mobile Options':         openSubState(new mobile.options.MobileOptionsSubState());
 			#end
 		}
 	}
@@ -130,7 +130,7 @@ class OptionsState extends MusicBeatState
 		Thread.create(function()
 		{
 			mutex.acquire();
-			for (i in options.VisualsUISubState.pauseMusics)
+			for (i in VisualsUISubState.pauseMusics)
 				if (i.toLowerCase() != 'none')
 					Paths.music(Paths.formatToSongPath(i));
 			mutex.release();
@@ -216,7 +216,7 @@ class OptionsState extends MusicBeatState
 		titleGlow.borderSize = 5;
 		titleGlow.scrollFactor.set();
 		titleGlow.alpha = 0;
-		titleGlow.y = -50;
+		titleGlow.y    = -50;
 		add(titleGlow);
 
 		titleText = new FlxText(12, 14, 0, 'OPTIONS', 22);
@@ -224,7 +224,7 @@ class OptionsState extends MusicBeatState
 		titleText.borderSize = 2;
 		titleText.scrollFactor.set();
 		titleText.alpha = 0;
-		titleText.y = -50;
+		titleText.y    = -50;
 		add(titleText);
 
 		if (controls.mobileC)
@@ -381,7 +381,7 @@ class OptionsState extends MusicBeatState
 	function changeSelection(change:Int = 0, ?playSound:Bool = true):Void
 	{
 		curSelected += change;
-		if (curSelected < 0)             curSelected = options.length - 1;
+		if (curSelected < 0)              curSelected = options.length - 1;
 		if (curSelected >= options.length) curSelected = 0;
 
 		if (playSound && change != 0)
@@ -412,17 +412,17 @@ class OptionsState extends MusicBeatState
 			}
 		}
 
-		FlxTween.cancelTweensOf(topAccent,   ['color']);
-		FlxTween.cancelTweensOf(sideAccent,  ['color']);
-		FlxTween.cancelTweensOf(cardTag,     ['color']);
-		FlxTween.cancelTweensOf(selectedCard,['color']);
-		FlxTween.cancelTweensOf(selectedGlow,['color']);
+		FlxTween.cancelTweensOf(topAccent,    ['color']);
+		FlxTween.cancelTweensOf(sideAccent,   ['color']);
+		FlxTween.cancelTweensOf(cardTag,      ['color']);
+		FlxTween.cancelTweensOf(selectedCard, ['color']);
+		FlxTween.cancelTweensOf(selectedGlow, ['color']);
 
-		FlxTween.color(topAccent,    0.3, topAccent.color,    col);
-		FlxTween.color(sideAccent,   0.3, sideAccent.color,   col);
-		FlxTween.color(cardTag,      0.25,cardTag.color,       col);
-		FlxTween.color(selectedCard, 0.25,selectedCard.color,  col.getDarkened(0.78));
-		FlxTween.color(selectedGlow, 0.25,selectedGlow.color,  col.getDarkened(0.55));
+		FlxTween.color(topAccent,    0.3,  topAccent.color,    col);
+		FlxTween.color(sideAccent,   0.3,  sideAccent.color,   col);
+		FlxTween.color(cardTag,      0.25, cardTag.color,       col);
+		FlxTween.color(selectedCard, 0.25, selectedCard.color,  col.getDarkened(0.78));
+		FlxTween.color(selectedGlow, 0.25, selectedGlow.color,  col.getDarkened(0.55));
 	}
 
 	function _animateScanlines(elapsed:Float):Void
