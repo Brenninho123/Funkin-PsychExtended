@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas imagePath="school_supplies.png">
+	<SubTexture name="school supplies0000" x="270" y="43" width="742" height="182"/>
+	<SubTexture name="school supplies0001" x="264" y="250" width="754" height="184"/>
+	<SubTexture name="school supplies0002" x="264" y="460" width="754" height="184"/>
+	<SubTexture name="school supplies0003" x="243" y="695" width="795" height="214"/>
+	<SubTexture name="school supplies0004" x="243" y="934" width="795" height="214"/>
+</TextureAtlas>
