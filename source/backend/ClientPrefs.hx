@@ -8,45 +8,45 @@ import states.TitleState;
 
 @:structInit class SaveVariables
 {
-	public var extraButtons:String      = "NONE";
-	public var hitboxPos:Bool           = true;
-	public var dynamicColors:Bool       = true;
-	public var controlsAlpha:Float      = FlxG.onMobile ? 0.6 : 0.0;
-	public var screensaver:Bool         = false;
-	public var wideScreen:Bool          = false;
-	public var hitboxType:String        = "Gradient";
-	public var popUpRating:Bool         = true;
-	public var vsync:Bool               = false;
-	public var gameOverVibration:Bool   = false;
+	public var extraButtons:String     = "NONE";
+	public var hitboxPos:Bool          = true;
+	public var dynamicColors:Bool      = true;
+	public var controlsAlpha:Float     = FlxG.onMobile ? 0.6 : 0.0;
+	public var screensaver:Bool        = false;
+	public var wideScreen:Bool         = false;
+	public var hitboxType:String       = "Gradient";
+	public var popUpRating:Bool        = true;
+	public var vsync:Bool              = false;
+	public var gameOverVibration:Bool  = false;
 
 	#if android
-	public var storageType:String       = "EXTERNAL_MEDIA";
+	public var storageType:String      = "EXTERNAL_MEDIA";
 	#end
 
-	public var downScroll:Bool          = false;
-	public var middleScroll:Bool        = false;
-	public var opponentStrums:Bool      = true;
-	public var showFPS:Bool             = true;
-	public var flashing:Bool            = true;
-	public var autoPause:Bool           = true;
-	public var antialiasing:Bool        = true;
-	public var noteSkin:String          = 'Default';
-	public var splashSkin:String        = 'Psych';
-	public var splashAlpha:Float        = 0.6;
-	public var lowQuality:Bool          = false;
-	public var shaders:Bool             = true;
-	public var cacheOnGPU:Bool          = #if !switch false #else true #end;
-	public var framerate:Int            = 60;
-	public var camZooms:Bool            = true;
-	public var hideHud:Bool             = false;
-	public var noteOffset:Int           = 0;
+	public var downScroll:Bool         = false;
+	public var middleScroll:Bool       = false;
+	public var opponentStrums:Bool     = true;
+	public var showFPS:Bool            = true;
+	public var flashing:Bool           = true;
+	public var autoPause:Bool          = true;
+	public var antialiasing:Bool       = true;
+	public var noteSkin:String         = 'Default';
+	public var splashSkin:String       = 'Psych';
+	public var splashAlpha:Float       = 0.6;
+	public var lowQuality:Bool         = false;
+	public var shaders:Bool            = true;
+	public var cacheOnGPU:Bool         = #if !switch false #else true #end;
+	public var framerate:Int           = 60;
+	public var camZooms:Bool           = true;
+	public var hideHud:Bool            = false;
+	public var noteOffset:Int          = 0;
 
-	public var masterVolume:Float       = 1.0;
-	public var musicVolume:Float        = 1.0;
-	public var sfxVolume:Float          = 1.0;
-	public var vocalVolume:Float        = 1.0;
-	public var masterMuted:Bool         = false;
-	public var eqPreset:String          = 'Flat';
+	public var masterVolume:Float      = 1.0;
+	public var musicVolume:Float       = 1.0;
+	public var sfxVolume:Float         = 1.0;
+	public var vocalVolume:Float       = 1.0;
+	public var masterMuted:Bool        = false;
+	public var eqPreset:String         = 'Flat';
 
 	public var arrowRGB:Array<Array<FlxColor>> = [
 		[0xFFC24B99, 0xFFFFFFFF, 0xFF3C1F56],
@@ -62,15 +62,15 @@ import states.TitleState;
 		[0xFFFF884E, 0xFFFFFAF5, 0xFF6C0000]
 	];
 
-	public var ghostTapping:Bool        = true;
-	public var timeBarType:String       = 'Time Left';
-	public var scoreZoom:Bool           = true;
-	public var noReset:Bool             = false;
-	public var healthBarAlpha:Float     = 1.0;
-	public var hitsoundVolume:Float     = 0.0;
-	public var pauseMusic:String        = 'Tea Time';
-	public var checkForUpdates:Bool     = true;
-	public var comboStacking:Bool       = true;
+	public var ghostTapping:Bool       = true;
+	public var timeBarType:String      = 'Time Left';
+	public var scoreZoom:Bool          = true;
+	public var noReset:Bool            = false;
+	public var healthBarAlpha:Float    = 1.0;
+	public var hitsoundVolume:Float    = 0.0;
+	public var pauseMusic:String       = 'Tea Time';
+	public var checkForUpdates:Bool    = true;
+	public var comboStacking:Bool      = true;
 
 	public var gameplaySettings:Map<String, Dynamic> = [
 		'scrollspeed'  => 1.0,
@@ -84,14 +84,14 @@ import states.TitleState;
 		'opponentplay' => false
 	];
 
-	public var comboOffset:Array<Int>   = [0, 0, 0, 0];
-	public var ratingOffset:Int         = 0;
-	public var sickWindow:Int           = 45;
-	public var goodWindow:Int           = 90;
-	public var badWindow:Int            = 135;
-	public var safeFrames:Float         = 10;
-	public var guitarHeroSustains:Bool  = true;
-	public var discordRPC:Bool          = true;
+	public var comboOffset:Array<Int>  = [0, 0, 0, 0];
+	public var ratingOffset:Int        = 0;
+	public var sickWindow:Int          = 45;
+	public var goodWindow:Int          = 90;
+	public var badWindow:Int           = 135;
+	public var safeFrames:Float        = 10;
+	public var guitarHeroSustains:Bool = true;
+	public var discordRPC:Bool         = true;
 }
 
 class ClientPrefs
@@ -100,24 +100,24 @@ class ClientPrefs
 	public static var defaultData:SaveVariables = {};
 
 	public static var keyBinds:Map<String, Array<FlxKey>> = [
-		'note_up'      => [W,         UP],
-		'note_left'    => [A,         LEFT],
-		'note_down'    => [S,         DOWN],
-		'note_right'   => [D,         RIGHT],
-		'ui_up'        => [W,         UP],
-		'ui_left'      => [A,         LEFT],
-		'ui_down'      => [S,         DOWN],
-		'ui_right'     => [D,         RIGHT],
-		'accept'       => [SPACE,     ENTER],
-		'back'         => [BACKSPACE, ESCAPE],
-		'pause'        => [ENTER,     ESCAPE],
-		'reset'        => [R],
-		'volume_mute'  => [ZERO],
-		'volume_up'    => [NUMPADPLUS,  PLUS],
-		'volume_down'  => [NUMPADMINUS, MINUS],
-		'debug_1'      => [SEVEN],
-		'debug_2'      => [EIGHT],
-		'fullscreen'   => [F11]
+		'note_up'     => [W,         UP],
+		'note_left'   => [A,         LEFT],
+		'note_down'   => [S,         DOWN],
+		'note_right'  => [D,         RIGHT],
+		'ui_up'       => [W,         UP],
+		'ui_left'     => [A,         LEFT],
+		'ui_down'     => [S,         DOWN],
+		'ui_right'    => [D,         RIGHT],
+		'accept'      => [SPACE,     ENTER],
+		'back'        => [BACKSPACE, ESCAPE],
+		'pause'       => [ENTER,     ESCAPE],
+		'reset'       => [R],
+		'volume_mute' => [ZERO],
+		'volume_up'   => [NUMPADPLUS,  PLUS],
+		'volume_down' => [NUMPADMINUS, MINUS],
+		'debug_1'     => [SEVEN],
+		'debug_2'     => [EIGHT],
+		'fullscreen'  => [F11]
 	];
 
 	public static var gamepadBinds:Map<String, Array<FlxGamepadInputID>> = [
@@ -140,19 +140,19 @@ class ClientPrefs
 		'note_left'  => [NOTE_LEFT,  LEFT2],
 		'note_down'  => [NOTE_DOWN,  DOWN2],
 		'note_right' => [NOTE_RIGHT, RIGHT2],
-		'ui_up'      => [UP,   NOTE_UP],
-		'ui_left'    => [LEFT, NOTE_LEFT],
-		'ui_down'    => [DOWN, NOTE_DOWN],
-		'ui_right'   => [RIGHT,NOTE_RIGHT],
+		'ui_up'      => [UP,    NOTE_UP],
+		'ui_left'    => [LEFT,  NOTE_LEFT],
+		'ui_down'    => [DOWN,  NOTE_DOWN],
+		'ui_right'   => [RIGHT, NOTE_RIGHT],
 		'accept'     => [A],
 		'back'       => [B],
 		'pause'      => [#if android NONE #else P #end],
 		'reset'      => [NONE]
 	];
 
-	public static var defaultMobileBinds:Map<String, Array<MobileInputID>>   = null;
-	public static var defaultKeys:Map<String, Array<FlxKey>>                 = null;
-	public static var defaultButtons:Map<String, Array<FlxGamepadInputID>>   = null;
+	public static var defaultMobileBinds:Map<String, Array<MobileInputID>>  = null;
+	public static var defaultKeys:Map<String, Array<FlxKey>>                = null;
+	public static var defaultButtons:Map<String, Array<FlxGamepadInputID>>  = null;
 
 	public static function resetKeys(?controller:Null<Bool> = null):Void
 	{
@@ -212,8 +212,12 @@ class ClientPrefs
 		#end
 
 		for (key in Reflect.fields(data))
-			if (key != 'gameplaySettings' && Reflect.hasField(FlxG.save.data, key))
-				Reflect.setField(data, key, Reflect.field(FlxG.save.data, key));
+		{
+			if (key == 'gameplaySettings') continue;
+			if (!Reflect.hasField(FlxG.save.data, key)) continue;
+			var val:Dynamic = Reflect.field(FlxG.save.data, key);
+			if (val != null) Reflect.setField(data, key, val);
+		}
 
 		if (Main.fpsVar != null)
 			Main.fpsVar.visible = data.showFPS;
