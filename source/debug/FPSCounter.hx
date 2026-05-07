@@ -4,6 +4,7 @@ import flixel.FlxG;
 import openfl.text.TextField;
 import openfl.text.TextFormat;
 import openfl.system.System as OpenFlSystem;
+import lime.system.System as LimeSystem;
 
 class FPSCounter extends TextField
 {
@@ -12,6 +13,8 @@ class FPSCounter extends TextField
 
 	@:noCompletion private var times:Array<Float>;
 
+	static var _platform:String = _detectPlatform();
+
 	public function new(x:Float = 10, y:Float = 10, color:Int = 0x000000)
 	{
 		super();
@@ -19,12 +22,12 @@ class FPSCounter extends TextField
 		positionFPS(x, y);
 
 		currentFPS = 0;
-		selectable = false;
+		selectable  = false;
 		mouseEnabled = false;
-		defaultTextFormat = new TextFormat("_sans", 14, color);
-		width = FlxG.width;
-		multiline = true;
-		text = "FPS: ";
+		defaultTextFormat = new TextFormat('_sans', 14, color);
+		autoSize = openfl.text.TextFieldAutoSize.LEFT;
+		multiline = false;
+		text = 'FPS: --';
 
 		times = [];
 	}
@@ -50,12 +53,15 @@ class FPSCounter extends TextField
 
 	public dynamic function updateText():Void
 	{
-		text = 'FPS: $currentFPS'
-			+ '\nMemory: ${flixel.util.FlxStringUtil.formatBytes(memoryMegas)}';
+		var mem = flixel.util.FlxStringUtil.formatBytes(memoryMegas);
+		text = 'FPS: $currentFPS  •  Memory: $mem  •  System: $_platform';
 
-		textColor = 0xFFFFFFFF;
-		if (currentFPS < FlxG.drawFramerate * 0.5)
-			textColor = 0xFFFF0000;
+		if (currentFPS >= FlxG.drawFramerate * 0.75)
+			textColor = 0xFFFFFFFF;
+		else if (currentFPS >= FlxG.drawFramerate * 0.5)
+			textColor = 0xFFFFCC00;
+		else
+			textColor = 0xFFFF4444;
 	}
 
 	inline function get_memoryMegas():Float
@@ -66,5 +72,17 @@ class FPSCounter extends TextField
 		scaleX = scaleY = #if android (scale > 1 ? scale : 1) #else (scale < 1 ? scale : 1) #end;
 		x = FlxG.game.x + X;
 		y = FlxG.game.y + Y;
+	}
+
+	static function _detectPlatform():String
+	{
+		#if windows  return 'Windows'; #end
+		#if mac      return 'macOS';   #end
+		#if linux    return 'Linux';   #end
+		#if android  return 'Android'; #end
+		#if ios      return 'iOS';     #end
+		#if html5    return 'Browser'; #end
+		#if switch   return 'Switch';  #end
+		return LimeSystem.platformName != null ? LimeSystem.platformName : 'Unknown';
 	}
 }
