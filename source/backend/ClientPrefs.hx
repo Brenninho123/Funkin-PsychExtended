@@ -46,6 +46,7 @@ import states.TitleState;
 	public var sfxVolume:Float          = 1.0;
 	public var vocalVolume:Float        = 1.0;
 	public var masterMuted:Bool         = false;
+	public var eqPreset:String          = 'Flat';
 
 	public var arrowRGB:Array<Array<FlxColor>> = [
 		[0xFFC24B99, 0xFFFFFFFF, 0xFF3C1F56],
@@ -171,16 +172,16 @@ class ClientPrefs
 		var kb = keyBinds.get(key);
 		var gb = gamepadBinds.get(key);
 		var mb = mobileBinds.get(key);
-		while (kb != null && kb.contains(NONE))  kb.remove(NONE);
-		while (gb != null && gb.contains(NONE))  gb.remove(NONE);
-		while (mb != null && mb.contains(NONE))  mb.remove(NONE);
+		while (kb != null && kb.contains(NONE)) kb.remove(NONE);
+		while (gb != null && gb.contains(NONE)) gb.remove(NONE);
+		while (mb != null && mb.contains(NONE)) mb.remove(NONE);
 	}
 
 	public static function loadDefaultKeys():Void
 	{
-		defaultKeys         = keyBinds.copy();
-		defaultButtons      = gamepadBinds.copy();
-		defaultMobileBinds  = mobileBinds.copy();
+		defaultKeys        = keyBinds.copy();
+		defaultButtons     = gamepadBinds.copy();
+		defaultMobileBinds = mobileBinds.copy();
 	}
 
 	public static function saveSettings():Void
