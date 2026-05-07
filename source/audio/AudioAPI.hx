@@ -21,6 +21,8 @@ class AudioAPI
 	public static var sfxVolume(default, set):Float    = 1.0;
 	public static var vocalVolume(default, set):Float  = 1.0;
 
+	public static var initialized:Bool = false;
+
 	static var _duckTween:FlxTween  = null;
 	static var _fadeTween:FlxTween  = null;
 	static var _crossTween:FlxTween = null;
@@ -33,20 +35,18 @@ class AudioAPI
 	static var _eqMid:Float   = 1.0;
 	static var _eqHigh:Float  = 1.0;
 
-	static var _reverbWet:Float = 0.0;
-	static var _chorusWet:Float = 0.0;
+	static var _reverbWet:Float  = 0.0;
+	static var _chorusWet:Float  = 0.0;
 
 	static var _recordingBuffer:Array<Float> = [];
-	static var _isRecording:Bool    = false;
-	static var _recordSampleRate:Int = 44100;
+	static var _isRecording:Bool     = false;
+	static var _recordSampleRate:Int  = 44100;
 	static var _recordStartTime:Float = 0.0;
-
-	static var _initialized:Bool = false;
 
 	public static function init():Void
 	{
-		if (_initialized) return;
-		_initialized = true;
+		if (initialized) return;
+		initialized = true;
 		loadPrefs();
 		_applyMasterTransform();
 	}
@@ -183,19 +183,17 @@ class AudioAPI
 		var startFromVol:Float = from != null ? from.volume : 0.0;
 		var startToVol:Float   = musicVolume;
 
-		_crossTween = FlxTween.num(0.0, 1.0, duration, {ease: FlxEase.sineInOut}, function(t:Float)
-		{
-			if (from != null) from.volume = _clamp(startFromVol * (1.0 - t), 0.0, 1.0);
-			if (to   != null) to.volume   = _clamp(startToVol  * t,          0.0, 1.0);
-		});
-
-		FlxTween.num(0.0, 1.0, duration, {
+		_crossTween = FlxTween.num(0.0, 1.0, duration, {
 			ease: FlxEase.sineInOut,
 			onComplete: function(_)
 			{
 				if (from != null) { from.stop(); from.volume = startFromVol; }
 			}
-		}, function(_) {});
+		}, function(t:Float)
+		{
+			if (from != null) from.volume = _clamp(startFromVol * (1.0 - t), 0.0, 1.0);
+			if (to   != null) to.volume   = _clamp(startToVol  * t,          0.0, 1.0);
+		});
 	}
 
 	public static function duck(?amount:Float = 0.3, ?duration:Float = 0.2, ?holdTime:Float = 1.0, ?releaseDuration:Float = 0.4):Void
@@ -256,7 +254,7 @@ class AudioAPI
 		var transform = SoundMixer.soundTransform;
 		if (transform != null)
 		{
-			transform.volume    = _clamp(masterVolume * combined, 0.0, 1.0);
+			transform.volume          = _clamp(masterVolume * combined, 0.0, 1.0);
 			SoundMixer.soundTransform = transform;
 		}
 	}
