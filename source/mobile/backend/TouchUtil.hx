@@ -16,19 +16,39 @@ class TouchUtil
 	public static var touchCount(get, never):Int;
 	public static var hasTouches(get, never):Bool;
 
+	private static var _lastTouchID:Int = -1;
+	private static var _tapCooldown:Float = 0;
+	private static inline var TAP_DELAY:Float = 0.08;
+
+	public static function update(elapsed:Float):Void
+	{
+		if (_tapCooldown > 0)
+			_tapCooldown -= elapsed;
+	}
+
 	public static function overlaps(object:FlxObject, ?camera:FlxCamera):Bool
 	{
-		if (object == null) return false;
+		if (object == null)
+			return false;
+
 		var cam = camera != null ? camera : object.camera;
+
 		for (touch in FlxG.touches.list)
-			if (touch != null && touch.overlaps(object, cam))
+		{
+			if (touch == null)
+				continue;
+
+			if (touch.overlaps(object, cam))
 				return true;
+		}
+
 		return false;
 	}
 
 	public static function overlapsComplex(object:FlxObject, ?camera:FlxCamera):Bool
 	{
-		if (object == null) return false;
+		if (object == null)
+			return false;
 
 		var point = FlxPoint.get();
 
@@ -38,8 +58,11 @@ class TouchUtil
 			{
 				for (touch in FlxG.touches.list)
 				{
-					if (touch == null) continue;
+					if (touch == null)
+						continue;
+
 					@:privateAccess touch.getWorldPosition(cam, point);
+
 					@:privateAccess
 					if (object.overlapsPoint(point, true, cam))
 					{
@@ -53,8 +76,11 @@ class TouchUtil
 		{
 			for (touch in FlxG.touches.list)
 			{
-				if (touch == null) continue;
+				if (touch == null)
+					continue;
+
 				@:privateAccess touch.getWorldPosition(camera, point);
+
 				@:privateAccess
 				if (object.overlapsPoint(point, true, camera))
 				{
@@ -77,51 +103,129 @@ class TouchUtil
 	public static function overlapsJustReleased(object:FlxObject, ?camera:FlxCamera):Bool
 		return justReleased && overlaps(object, camera);
 
+	public static function overlapsOnce(object:FlxObject, ?camera:FlxCamera):Bool
+	{
+		if (_tapCooldown > 0)
+			return false;
+
+		var cam = camera != null ? camera : object.camera;
+
+		for (touch in FlxG.touches.list)
+		{
+			if (touch == null)
+				continue;
+
+			if (touch.justPressed && touch.overlaps(object, cam))
+			{
+				_lastTouchID = touch.touchPointID;
+				_tapCooldown = TAP_DELAY;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public static function getTouchesOn(object:FlxObject, ?camera:FlxCamera):Array<FlxTouch>
 	{
-		if (object == null) return [];
-		var cam = camera != null ? camera : object.camera;
 		var result:Array<FlxTouch> = [];
+
+		if (object == null)
+			return result;
+
+		var cam = camera != null ? camera : object.camera;
+
 		for (touch in FlxG.touches.list)
-			if (touch != null && touch.overlaps(object, cam))
+		{
+			if (touch == null)
+				continue;
+
+			if (touch.overlaps(object, cam))
 				result.push(touch);
+		}
+
 		return result;
 	}
 
 	public static function getPinchDistance():Float
 	{
-		var list = FlxG.touches.list;
-		if (list.length < 2) return 0;
-		var t1 = list[0];
-		var t2 = list[1];
+		var valid:Array<FlxTouch> = [];
+
+		for (touch in FlxG.touches.list)
+		{
+			if (touch != null && touch.pressed)
+				valid.push(touch);
+		}
+
+		if (valid.length < 2)
+			return 0;
+
+		var t1 = valid[0];
+		var t2 = valid[1];
+
 		var dx = t1.screenX - t2.screenX;
 		var dy = t1.screenY - t2.screenY;
+
 		return Math.sqrt(dx * dx + dy * dy);
 	}
 
 	public static function getCentroid():FlxPoint
 	{
-		var list = FlxG.touches.list;
-		if (list.length == 0) return FlxPoint.get(0, 0);
 		var sx:Float = 0;
 		var sy:Float = 0;
-		for (t in list) { sx += t.screenX; sy += t.screenY; }
-		return FlxPoint.get(sx / list.length, sy / list.length);
+		var count:Int = 0;
+
+		for (touch in FlxG.touches.list)
+		{
+			if (touch == null)
+				continue;
+
+			sx += touch.screenX;
+			sy += touch.screenY;
+			count++;
+		}
+
+		if (count == 0)
+			return FlxPoint.get(0, 0);
+
+		return FlxPoint.get(sx / count, sy / count);
 	}
 
 	@:noCompletion
 	private static function get_pressed():Bool
 	{
 		for (touch in FlxG.touches.list)
-			if (touch != null && touch.pressed) return true;
+		{
+			if (touch != null && touch.pressed)
+				return true;
+		}
+
 		return false;
 	}
 
 	@:noCompletion
 	private static function get_justPressed():Bool
 	{
+		if (_tapCooldown > 0)
+			return false;
+
 		for (touch in FlxG.touches.list)
-			if (touch != null && touch.justPressed) return true;
+		{
+			if (touch == null)
+				continue;
+
+			if (touch.justPressed)
+			{
+				if (_lastTouchID == touch.touchPointID)
+					return false;
+
+				_lastTouchID = touch.touchPointID;
+				_tapCooldown = TAP_DELAY;
+
+				return true;
+			}
+		}
+
 		return false;
 	}
 
@@ -129,7 +233,11 @@ class TouchUtil
 	private static function get_justReleased():Bool
 	{
 		for (touch in FlxG.touches.list)
-			if (touch != null && touch.justReleased) return true;
+		{
+			if (touch != null && touch.justReleased)
+				return true;
+		}
+
 		return false;
 	}
 
@@ -137,7 +245,11 @@ class TouchUtil
 	private static function get_released():Bool
 	{
 		for (touch in FlxG.touches.list)
-			if (touch != null && touch.released) return true;
+		{
+			if (touch != null && touch.released)
+				return true;
+		}
+
 		return false;
 	}
 
@@ -145,15 +257,37 @@ class TouchUtil
 	private static function get_touch():Null<FlxTouch>
 	{
 		for (touch in FlxG.touches.list)
-			if (touch != null) return touch;
+		{
+			if (touch != null)
+				return touch;
+		}
+
 		return null;
 	}
 
 	@:noCompletion
 	private static function get_touchCount():Int
-		return FlxG.touches.list.length;
+	{
+		var count:Int = 0;
+
+		for (touch in FlxG.touches.list)
+		{
+			if (touch != null)
+				count++;
+		}
+
+		return count;
+	}
 
 	@:noCompletion
 	private static function get_hasTouches():Bool
-		return FlxG.touches.list.length > 0;
+	{
+		for (touch in FlxG.touches.list)
+		{
+			if (touch != null)
+				return true;
+		}
+
+		return false;
+	}
 }
