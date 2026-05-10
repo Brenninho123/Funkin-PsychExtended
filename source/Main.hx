@@ -6,14 +6,12 @@ import debug.FPSCounter;
 
 import flixel.FlxG;
 import flixel.FlxGame;
-import flixel.FlxState;
 import flixel.graphics.FlxGraphic;
 import flixel.math.FlxMath;
 import flixel.tweens.FlxTween;
-import flixel.util.FlxTimer;
 import flixel.util.FlxColor;
+import flixel.util.FlxTimer;
 
-import haxe.io.Path;
 import haxe.Timer;
 
 import openfl.Assets;
@@ -32,8 +30,8 @@ import openfl.system.System as OpenFlSystem;
 import lime.app.Application;
 import lime.system.System as LimeSystem;
 
-import states.TitleState;
 import mobile.backend.MobileScaleMode;
+import states.TitleState;
 
 #if COPYSTATE_ALLOWED
 import states.CopyState;
@@ -47,8 +45,8 @@ import lime.graphics.Image;
 
 #if windows
 @:cppFileCode('
-	#include <windows.h>
-	#include <winuser.h>
+#include <windows.h>
+#include <winuser.h>
 ')
 #end
 
@@ -65,7 +63,7 @@ class Main extends Sprite
 
 	public static inline final MEMORY_LIMIT_MB:Float = 1024;
 
-	public static var fpsCounter:FPSCounter;
+	public static var fpsVar:FPSCounter;
 
 	public static var focused:Bool = true;
 	public static var minimized:Bool = false;
@@ -80,9 +78,9 @@ class Main extends Sprite
 	public static var stateStartTime:Float = 0;
 
 	#if mobile
-	public static inline final PLATFORM:String = "Mobile";
+	public static final platform:String = "Mobile";
 	#else
-	public static inline final PLATFORM:String = "Desktop";
+	public static final platform:String = "Desktop";
 	#end
 
 	private var gameConfig = {
@@ -128,10 +126,6 @@ class Main extends Sprite
 
 		backend.CrashHandler.init();
 
-		#if windows
-		setupWindowsOptimizations();
-		#end
-
 		if (stage != null)
 			initialize();
 		else
@@ -152,30 +146,34 @@ class Main extends Sprite
 		initialized = true;
 
 		setupGame();
-		setupEngine();
-		setupPerformanceSystems();
+		setupStage();
 		setupSignals();
 		setupFocusEvents();
 		setupFPSCounter();
 		setupAudio();
 		setupMemoryManager();
-		setupStage();
+		setupPerformanceSystems();
 		setupPlatformStuff();
 		setupAdvancedSystems();
 
 		stateStartTime = Timer.stamp();
+
+		trace("======================");
+		trace(ENGINE_NAME);
+		trace("Platform: " + platform);
+		trace("======================");
 	}
 
 	function setupGame():Void
 	{
 		#if (openfl <= "9.2.0")
-		var sw = Lib.current.stage.stageWidth;
-		var sh = Lib.current.stage.stageHeight;
+		var sw:Int = Lib.current.stage.stageWidth;
+		var sh:Int = Lib.current.stage.stageHeight;
 
 		if (gameConfig.zoom == -1.0)
 		{
-			var ratioX = sw / gameConfig.width;
-			var ratioY = sh / gameConfig.height;
+			var ratioX:Float = sw / gameConfig.width;
+			var ratioY:Float = sh / gameConfig.height;
 
 			gameConfig.zoom = Math.min(ratioX, ratioY);
 
@@ -191,6 +189,7 @@ class Main extends Sprite
 		#end
 
 		Controls.instance = new Controls();
+
 		ClientPrefs.loadDefaultKeys();
 
 		#if ACHIEVEMENTS_ALLOWED
@@ -225,10 +224,12 @@ class Main extends Sprite
 
 	function setupFPSCounter():Void
 	{
-		fpsCounter = new FPSCounter(10, 3, FlxColor.WHITE);
-		addChild(fpsCounter);
+		fpsVar = new FPSCounter(10, 3, FlxColor.WHITE);
 
-		fpsCounter.visible = ClientPrefs.data.showFPS;
+		addChild(fpsVar);
+
+		if (fpsVar != null)
+			fpsVar.visible = ClientPrefs.data.showFPS;
 	}
 
 	function setupAudio():Void
@@ -308,6 +309,7 @@ class Main extends Sprite
 		lastFrameTime = Timer.stamp();
 
 		perfTimer = new FlxTimer();
+
 		perfTimer.start(1 / 30, function(_)
 		{
 			var current = Timer.stamp();
@@ -319,6 +321,7 @@ class Main extends Sprite
 			deltaMultiplier = delta * DEFAULT_FPS;
 
 			checkPerformance();
+
 		}, 0);
 	}
 
@@ -335,11 +338,11 @@ class Main extends Sprite
 
 			if (mem > MEMORY_LIMIT_MB)
 			{
-				forceGC();
-
 				lowMemoryMode = true;
 
 				clearUnusedAssets();
+
+				forceGC();
 			}
 
 			if (mem > lastMemory + 32)
@@ -359,7 +362,6 @@ class Main extends Sprite
 	function setupAdvancedSystems():Void
 	{
 		FlxGraphic.defaultPersist = true;
-		FlxGraphic.destroyOnNoUse = false;
 
 		FlxG.fixedTimestep = false;
 
@@ -367,29 +369,9 @@ class Main extends Sprite
 			optimizeFPS();
 	}
 
-	function setupEngine():Void
-	{
-		trace("===============================");
-		trace(ENGINE_NAME);
-		trace("Platform: " + PLATFORM);
-		trace("Memory: " + Std.int(getMemoryMB()) + " MB");
-		trace("===============================");
-	}
-
-	#if windows
-	function setupWindowsOptimizations():Void
-	{
-		@:functionCode('
-			SetProcessDPIAware();
-			DisableProcessWindowsGhosting();
-			timeBeginPeriod(1);
-		')
-	}
-	#end
-
 	function optimizeFPS():Void
 	{
-		var fps = ClientPrefs.data.framerate;
+		var fps:Int = ClientPrefs.data.framerate;
 
 		if (fps < MIN_FPS)
 			fps = MIN_FPS;
@@ -424,10 +406,6 @@ class Main extends Sprite
 	{
 		try
 		{
-			Assets.cache.clear("songs");
-			Assets.cache.clear("music");
-			Assets.cache.clear("sounds");
-
 			FlxG.bitmap.clearUnused();
 
 			forceGC();
@@ -437,13 +415,13 @@ class Main extends Sprite
 
 	function onResize(w:Int, h:Int):Void
 	{
-		var scale = Math.min(
+		var scale:Float = Math.min(
 			Lib.current.stage.stageWidth / FlxG.width,
 			Lib.current.stage.stageHeight / FlxG.height
 		);
 
-		if (fpsCounter != null)
-			fpsCounter.positionFPS(10, 3, scale);
+		if (fpsVar != null)
+			fpsVar.positionFPS(10, 3, scale);
 
 		if (FlxG.game != null)
 			resetSpriteCache(FlxG.game);
@@ -475,8 +453,8 @@ class Main extends Sprite
 
 	function onPostStateSwitch():Void
 	{
-		if (fpsCounter != null)
-			fpsCounter.visible = ClientPrefs.data.showFPS;
+		if (fpsVar != null)
+			fpsVar.visible = ClientPrefs.data.showFPS;
 
 		AudioAPI.loadPrefs();
 
@@ -504,6 +482,7 @@ class Main extends Sprite
 	function onClose():Void
 	{
 		ClientPrefs.saveSettings();
+
 		AudioAPI.savePrefs();
 
 		#if DISCORD_ALLOWED
@@ -519,7 +498,6 @@ class Main extends Sprite
 	public static function takeScreenshot():Void
 	{
 		#if sys
-
 		try
 		{
 			var bmp = new BitmapData(FlxG.width, FlxG.height, false);
@@ -541,7 +519,6 @@ class Main extends Sprite
 			sys.io.File.saveBytes('screenshots/$file', png);
 		}
 		catch (_) {}
-
 		#end
 	}
 
