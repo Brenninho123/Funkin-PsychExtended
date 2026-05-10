@@ -1,6 +1,6 @@
 # Friday Night Funkin' - Psych Extended
 
-This Template for Making any Mods and Engines you want, with Mobile Support.
+Basically a fork of the Psych Engine, but with expansions and improved quality.
 
 ![special](art/logo.png)
 
@@ -13,6 +13,10 @@ inside `Project.xml`, you will find several variables to customize Psych Engine 
 to start you off, disabling Videos should be simple, simply Delete the line `"VIDEOS_ALLOWED"` or comment it out by wrapping the line in XML-like comments, like this `<!-- YOUR_LINE_HERE -->`
 
 same goes for *Lua Scripts*, comment out or delete the line with `LUA_ALLOWED`, this and other customization options are all available within the `Project.xml` file
+
+## Psych Extended Credits:
+* Brenninho - Owner
+* Argmods - Artist
 
 ## Template Credits:
 * Ali Alafandy - Templator.
