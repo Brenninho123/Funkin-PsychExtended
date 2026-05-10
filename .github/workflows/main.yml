@@ -31,6 +31,26 @@ jobs:
           haxelib install hmm --quiet
           haxelib run hmm install --quiet
 
+      - name: Setup Android Command Line Tools
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+
+          mkdir -p $ANDROID_HOME/cmdline-tools
+
+          if [ ! -d "$ANDROID_HOME/cmdline-tools/latest" ]; then
+            cd $ANDROID_HOME/cmdline-tools
+
+            wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+
+            unzip tools.zip
+
+            mv cmdline-tools latest
+          fi
+
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
       - name: Configure Android SDK/NDK
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
@@ -56,10 +76,13 @@ jobs:
 
       - name: Accept Google Licenses
         run: |
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
           yes | sdkmanager --licenses || true
 
       - name: Install Android Packages
         run: |
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+
           sdkmanager \
             "platform-tools" \
             "platforms;android-34" \
