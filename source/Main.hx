@@ -11,16 +11,22 @@ import flixel.graphics.FlxGraphic;
 import flixel.math.FlxMath;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxTimer;
+import flixel.util.FlxColor;
 
 import haxe.io.Path;
+import haxe.Timer;
+
 import openfl.Assets;
 import openfl.Lib;
+import openfl.display.BitmapData;
+import openfl.display.PNGEncoderOptions;
 import openfl.display.Sprite;
-import openfl.display.StageScaleMode;
 import openfl.display.StageQuality;
+import openfl.display.StageScaleMode;
 import openfl.events.Event;
-import openfl.events.KeyboardEvent;
 import openfl.events.FocusEvent;
+import openfl.events.KeyboardEvent;
+import openfl.geom.Rectangle;
 import openfl.system.System as OpenFlSystem;
 
 import lime.app.Application;
@@ -40,46 +46,68 @@ import lime.graphics.Image;
 #end
 
 #if windows
-@:cppFileCode('#include <windows.h>\n#include <winuser.h>')
+@:cppFileCode('
+	#include <windows.h>
+	#include <winuser.h>
+')
 #end
 
 class Main extends Sprite
 {
-	static inline final GAME_WIDTH:Int    = 1280;
-	static inline final GAME_HEIGHT:Int   = 720;
-	static inline final FRAMERATE:Int     = 60;
-	static inline final MAX_FRAMERATE:Int = 240;
-	static inline final MIN_FRAMERATE:Int = 60;
-	static inline final MAX_MEMORY_MB:Float = 768.0;
+	public static inline final ENGINE_NAME:String = "Psych Extended";
 
-	var game = {
-		width:          GAME_WIDTH,
-		height:         GAME_HEIGHT,
-		initialState:   TitleState,
-		zoom:           -1.0,
-		framerate:      FRAMERATE,
-		skipSplash:     true,
+	public static inline final GAME_WIDTH:Int = 1280;
+	public static inline final GAME_HEIGHT:Int = 720;
+
+	public static inline final DEFAULT_FPS:Int = 60;
+	public static inline final MAX_FPS:Int = 240;
+	public static inline final MIN_FPS:Int = 30;
+
+	public static inline final MEMORY_LIMIT_MB:Float = 1024;
+
+	public static var fpsCounter:FPSCounter;
+
+	public static var focused:Bool = true;
+	public static var minimized:Bool = false;
+	public static var initialized:Bool = false;
+
+	public static var deltaMultiplier:Float = 1.0;
+	public static var elapsedTime:Float = 0.0;
+
+	public static var lowMemoryMode:Bool = false;
+	public static var dynamicFramerate:Bool = true;
+
+	public static var stateStartTime:Float = 0;
+
+	#if mobile
+	public static inline final PLATFORM:String = "Mobile";
+	#else
+	public static inline final PLATFORM:String = "Desktop";
+	#end
+
+	private var gameConfig = {
+		width: GAME_WIDTH,
+		height: GAME_HEIGHT,
+		initialState: TitleState,
+		zoom: -1.0,
+		framerate: DEFAULT_FPS,
+		skipSplash: true,
 		startFullscreen: false
 	};
 
-	public static var fpsVar:FPSCounter;
+	static var gcTimer:FlxTimer;
+	static var perfTimer:FlxTimer;
 
-	public static var focused:Bool    = true;
-	public static var suspended:Bool  = false;
+	static var memoryPeak:Float = 0;
+	static var lastMemory:Float = 0;
 
-	#if mobile
-	public static final platform:String = "Mobile";
-	#else
-	public static final platform:String = "Desktop";
-	#end
-
-	static var _gcTimer:FlxTimer  = null;
-	static var _lastMemMB:Float   = 0.0;
-	static var _initDone:Bool     = false;
+	static var fpsDropFrames:Int = 0;
+	static var lastFrameTime:Float = 0;
 
 	public static function main():Void
 	{
 		Lib.current.addChild(new Main());
+
 		#if cpp
 		cpp.NativeGc.enable(true);
 		cpp.NativeGc.run(true);
@@ -101,54 +129,61 @@ class Main extends Sprite
 		backend.CrashHandler.init();
 
 		#if windows
-		_applyWindowsFlags();
+		setupWindowsOptimizations();
 		#end
 
 		if (stage != null)
-			_init();
+			initialize();
 		else
-			addEventListener(Event.ADDED_TO_STAGE, _onAddedToStage);
+			addEventListener(Event.ADDED_TO_STAGE, onAdded);
 	}
 
-	#if windows
-	function _applyWindowsFlags():Void
+	function onAdded(e:Event):Void
 	{
-		@:functionCode('
-			setProcessDPIAware();
-			DisableProcessWindowsGhosting();
-		')
+		removeEventListener(Event.ADDED_TO_STAGE, onAdded);
+		initialize();
 	}
-	#end
 
-	function _onAddedToStage(e:Event):Void
+	function initialize():Void
 	{
-		removeEventListener(Event.ADDED_TO_STAGE, _onAddedToStage);
-		_init();
+		if (initialized)
+			return;
+
+		initialized = true;
+
+		setupGame();
+		setupEngine();
+		setupPerformanceSystems();
+		setupSignals();
+		setupFocusEvents();
+		setupFPSCounter();
+		setupAudio();
+		setupMemoryManager();
+		setupStage();
+		setupPlatformStuff();
+		setupAdvancedSystems();
+
+		stateStartTime = Timer.stamp();
 	}
 
-	function _init():Void
-	{
-		if (_initDone) return;
-		_initDone = true;
-		_setupGame();
-	}
-
-	function _setupGame():Void
+	function setupGame():Void
 	{
 		#if (openfl <= "9.2.0")
-		var sw:Int = Lib.current.stage.stageWidth;
-		var sh:Int = Lib.current.stage.stageHeight;
+		var sw = Lib.current.stage.stageWidth;
+		var sh = Lib.current.stage.stageHeight;
 
-		if (game.zoom == -1.0)
+		if (gameConfig.zoom == -1.0)
 		{
-			var rx:Float = sw / game.width;
-			var ry:Float = sh / game.height;
-			game.zoom   = Math.min(rx, ry);
-			game.width  = Math.ceil(sw / game.zoom);
-			game.height = Math.ceil(sh / game.zoom);
+			var ratioX = sw / gameConfig.width;
+			var ratioY = sh / gameConfig.height;
+
+			gameConfig.zoom = Math.min(ratioX, ratioY);
+
+			gameConfig.width = Math.ceil(sw / gameConfig.zoom);
+			gameConfig.height = Math.ceil(sh / gameConfig.zoom);
 		}
 		#else
-		if (game.zoom == -1.0) game.zoom = 1.0;
+		gameConfig.zoom = 1;
 		#end
 
 		#if LUA_ALLOWED
@@ -162,85 +197,89 @@ class Main extends Sprite
 		Achievements.load();
 		#end
 
-		var flxGame = new FlxGame(
-			game.width, game.height,
-			#if COPYSTATE_ALLOWED !CopyState.checkExistingFiles() ? CopyState : #end game.initialState,
-			#if (flixel < "5.0.0") game.zoom, #end
-			game.framerate, game.framerate,
-			game.skipSplash, game.startFullscreen
+		var game = new FlxGame(
+			gameConfig.width,
+			gameConfig.height,
+			#if COPYSTATE_ALLOWED !CopyState.checkExistingFiles() ? CopyState : #end gameConfig.initialState,
+			#if (flixel < "5.0.0") gameConfig.zoom, #end
+			gameConfig.framerate,
+			gameConfig.framerate,
+			gameConfig.skipSplash,
+			gameConfig.startFullscreen
 		);
-		addChild(flxGame);
 
-		fpsVar = new FPSCounter(10, 3, 0xFFFFFF);
-		addChild(fpsVar);
+		addChild(game);
+	}
 
-		Lib.current.stage.align     = "tl";
+	function setupStage():Void
+	{
+		Lib.current.stage.align = "tl";
 		Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
-		Lib.current.stage.quality   = StageQuality.LOW;
-
-		if (fpsVar != null)
-			fpsVar.visible = ClientPrefs.data.showFPS;
-
-		#if linux
-		Lib.current.stage.window.setIcon(Image.fromFile('icon.png'));
-		#end
-
-		#if desktop
-		FlxG.stage.addEventListener(KeyboardEvent.KEY_UP, _onKeyUp);
-		#end
+		Lib.current.stage.quality = StageQuality.LOW;
 
 		#if html5
-		FlxG.autoPause     = false;
+		FlxG.autoPause = false;
 		FlxG.mouse.visible = false;
 		#end
+	}
 
-		#if DISCORD_ALLOWED
-		DiscordClient.prepare();
+	function setupFPSCounter():Void
+	{
+		fpsCounter = new FPSCounter(10, 3, FlxColor.WHITE);
+		addChild(fpsCounter);
+
+		fpsCounter.visible = ClientPrefs.data.showFPS;
+	}
+
+	function setupAudio():Void
+	{
+		AudioAPI.init();
+		AudioAPI.loadPrefs();
+	}
+
+	function setupPlatformStuff():Void
+	{
+		#if mobile
+		LimeSystem.allowScreenTimeout = false;
+		FlxG.scaleMode = new MobileScaleMode();
 		#end
 
 		#if android
 		FlxG.android.preventDefaultKeys = [BACK];
 		#end
 
-		#if mobile
-		LimeSystem.allowScreenTimeout = false;
-		FlxG.scaleMode = new MobileScaleMode();
+		#if linux
+		Lib.current.stage.window.setIcon(Image.fromFile("icon.png"));
 		#end
 
-		AudioAPI.init();
-
-		AntiCrasher.init(MAX_MEMORY_MB, function(msg:String)
-		{
-			#if sys
-			try { CoolUtil.showPopUp(msg, 'AntiCrasher'); } catch (_) {}
-			#end
-		});
-
-		_setupFocusHandlers();
-		_setupGCScheduler();
-		_setupVSync();
-
-		FlxG.signals.gameResized.add(_onGameResized);
-		FlxG.signals.preStateSwitch.add(_onPreStateSwitch);
-		FlxG.signals.postStateSwitch.add(_onPostStateSwitch);
-
-		Application.current.window.onClose.add(_onWindowClose);
+		#if DISCORD_ALLOWED
+		DiscordClient.prepare();
+		#end
 	}
 
-	function _setupFocusHandlers():Void
+	function setupSignals():Void
+	{
+		FlxG.signals.gameResized.add(onResize);
+		FlxG.signals.preStateSwitch.add(onPreStateSwitch);
+		FlxG.signals.postStateSwitch.add(onPostStateSwitch);
+
+		Application.current.window.onClose.add(onClose);
+	}
+
+	function setupFocusEvents():Void
 	{
 		Lib.current.stage.addEventListener(FocusEvent.FOCUS_IN, function(_)
 		{
-			focused  = true;
-			suspended = false;
+			focused = true;
+			minimized = false;
+
+			FlxG.game.focusLostFramerate = DEFAULT_FPS;
 
 			if (FlxG.sound.music != null && ClientPrefs.data.autoPause)
 			{
 				FlxG.sound.music.resume();
 				AudioAPI.resumeAll();
 			}
-
-			FlxG.game.focusLostFramerate = FRAMERATE;
 
 			#if mobile
 			LimeSystem.allowScreenTimeout = false;
@@ -249,8 +288,8 @@ class Main extends Sprite
 
 		Lib.current.stage.addEventListener(FocusEvent.FOCUS_OUT, function(_)
 		{
-			focused   = false;
-			suspended = true;
+			focused = false;
+			minimized = true;
 
 			FlxG.game.focusLostFramerate = 10;
 
@@ -258,114 +297,214 @@ class Main extends Sprite
 			LimeSystem.allowScreenTimeout = true;
 			#end
 		});
+
+		#if desktop
+		FlxG.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+		#end
 	}
 
-	function _setupGCScheduler():Void
+	function setupPerformanceSystems():Void
 	{
-		_gcTimer = new FlxTimer();
-		_gcTimer.start(30.0, function(_)
-		{
-			var memMB:Float = OpenFlSystem.totalMemory / 1024 / 1024;
+		lastFrameTime = Timer.stamp();
 
-			if (memMB > _lastMemMB + 50)
+		perfTimer = new FlxTimer();
+		perfTimer.start(1 / 30, function(_)
+		{
+			var current = Timer.stamp();
+			var delta = current - lastFrameTime;
+
+			lastFrameTime = current;
+
+			elapsedTime = delta;
+			deltaMultiplier = delta * DEFAULT_FPS;
+
+			checkPerformance();
+		}, 0);
+	}
+
+	function setupMemoryManager():Void
+	{
+		gcTimer = new FlxTimer();
+
+		gcTimer.start(15, function(_)
+		{
+			var mem = getMemoryMB();
+
+			if (mem > memoryPeak)
+				memoryPeak = mem;
+
+			if (mem > MEMORY_LIMIT_MB)
+			{
+				forceGC();
+
+				lowMemoryMode = true;
+
+				clearUnusedAssets();
+			}
+
+			if (mem > lastMemory + 32)
 			{
 				#if cpp
 				cpp.NativeGc.run(false);
 				#end
-				openfl.system.System.gc();
+
+				OpenFlSystem.gc();
 			}
 
-			_lastMemMB = memMB;
+			lastMemory = mem;
+
 		}, 0);
 	}
 
-	function _setupVSync():Void
+	function setupAdvancedSystems():Void
 	{
-		#if sys
-		var vFile = (StorageUtil.rootDir != null ? StorageUtil.rootDir : '') + 'vsync.txt';
-		try
-		{
-			if (sys.FileSystem.exists(vFile))
-			{
-				var val = sys.io.File.getContent(vFile).trim();
-				if (val == 'true')
-					Lib.current.stage.window.vsync = true;
-			}
-		}
-		catch (_) {}
-		#end
+		FlxGraphic.defaultPersist = true;
+		FlxGraphic.destroyOnNoUse = false;
+
+		FlxG.fixedTimestep = false;
+
+		if (dynamicFramerate)
+			optimizeFPS();
 	}
 
-	function _onPreStateSwitch():Void
+	function setupEngine():Void
+	{
+		trace("===============================");
+		trace(ENGINE_NAME);
+		trace("Platform: " + PLATFORM);
+		trace("Memory: " + Std.int(getMemoryMB()) + " MB");
+		trace("===============================");
+	}
+
+	#if windows
+	function setupWindowsOptimizations():Void
+	{
+		@:functionCode('
+			SetProcessDPIAware();
+			DisableProcessWindowsGhosting();
+			timeBeginPeriod(1);
+		')
+	}
+	#end
+
+	function optimizeFPS():Void
+	{
+		var fps = ClientPrefs.data.framerate;
+
+		if (fps < MIN_FPS)
+			fps = MIN_FPS;
+
+		if (fps > MAX_FPS)
+			fps = MAX_FPS;
+
+		FlxG.updateFramerate = fps;
+		FlxG.drawFramerate = fps;
+	}
+
+	function checkPerformance():Void
+	{
+		if (FlxG.drawFramerate < 50)
+			fpsDropFrames++;
+		else
+			fpsDropFrames = 0;
+
+		if (fpsDropFrames > 120)
+		{
+			lowMemoryMode = true;
+
+			FlxTween.globalManager.clear();
+
+			forceGC();
+
+			fpsDropFrames = 0;
+		}
+	}
+
+	function clearUnusedAssets():Void
+	{
+		try
+		{
+			Assets.cache.clear("songs");
+			Assets.cache.clear("music");
+			Assets.cache.clear("sounds");
+
+			FlxG.bitmap.clearUnused();
+
+			forceGC();
+		}
+		catch (_) {}
+	}
+
+	function onResize(w:Int, h:Int):Void
+	{
+		var scale = Math.min(
+			Lib.current.stage.stageWidth / FlxG.width,
+			Lib.current.stage.stageHeight / FlxG.height
+		);
+
+		if (fpsCounter != null)
+			fpsCounter.positionFPS(10, 3, scale);
+
+		if (FlxG.game != null)
+			resetSpriteCache(FlxG.game);
+
+		if (FlxG.cameras != null)
+		{
+			for (cam in FlxG.cameras.list)
+			{
+				if (cam != null)
+					resetSpriteCache(cam.flashSprite);
+			}
+		}
+	}
+
+	function onPreStateSwitch():Void
 	{
 		FlxTimer.globalManager.clear();
 		FlxTween.globalManager.clear();
 
-		if (FlxG.sound.music != null)
+		try
 		{
-			try { FlxG.sound.music.stop(); } catch (_) {}
+			if (FlxG.sound.music != null)
+				FlxG.sound.music.stop();
 		}
+		catch (_) {}
 
-		try { FlxG.cameras.reset(); } catch (_) {}
-
-		#if cpp
-		cpp.NativeGc.run(false);
-		#end
+		forceGC();
 	}
 
-	function _onPostStateSwitch():Void
+	function onPostStateSwitch():Void
 	{
-		if (FlxG.cameras == null || FlxG.cameras.list == null || FlxG.cameras.list.length == 0)
-		{
-			try { FlxG.cameras.reset(); } catch (_) {}
-		}
-
-		if (fpsVar != null)
-			fpsVar.visible = ClientPrefs.data.showFPS;
+		if (fpsCounter != null)
+			fpsCounter.visible = ClientPrefs.data.showFPS;
 
 		AudioAPI.loadPrefs();
 
-		#if cpp
-		cpp.NativeGc.run(true);
-		#end
+		stateStartTime = Timer.stamp();
 
-		openfl.system.System.gc();
+		forceGC();
 	}
 
-	function _onGameResized(w:Int, h:Int):Void
-	{
-		var scale = Math.min(
-			Lib.current.stage.stageWidth  / FlxG.width,
-			Lib.current.stage.stageHeight / FlxG.height
-		);
-
-		if (fpsVar != null)
-			fpsVar.positionFPS(10, 3, scale);
-
-		if (FlxG.cameras != null && FlxG.cameras.list != null)
-			for (cam in FlxG.cameras.list)
-				if (cam != null && cam.filters != null)
-					_resetSpriteCache(cam.flashSprite);
-
-		if (FlxG.game != null)
-			_resetSpriteCache(FlxG.game);
-	}
-
-	function _onKeyUp(e:KeyboardEvent):Void
+	function onKeyUp(e:KeyboardEvent):Void
 	{
 		#if desktop
-		if (Controls.instance.justReleased('fullscreen'))
+
+		if (Controls.instance.justReleased("fullscreen"))
 			FlxG.fullscreen = !FlxG.fullscreen;
 
-		if (Controls.instance.justReleased('volume_mute'))
+		if (Controls.instance.justReleased("volume_mute"))
 			AudioAPI.toggleMute();
+
+		if (Controls.instance.justReleased("screenshot"))
+			takeScreenshot();
+
 		#end
 	}
 
-	function _onWindowClose():Void
+	function onClose():Void
 	{
-		AudioAPI.savePrefs();
 		ClientPrefs.saveSettings();
+		AudioAPI.savePrefs();
 
 		#if DISCORD_ALLOWED
 		if (DiscordClient.isInitialized)
@@ -373,39 +512,47 @@ class Main extends Sprite
 		#end
 
 		AntiCrasher.clearLog();
+
+		forceGC();
 	}
 
-	static function _resetSpriteCache(sprite:Sprite):Void
+	public static function takeScreenshot():Void
 	{
-		if (sprite == null) return;
-		@:privateAccess
+		#if sys
+
+		try
 		{
-			sprite.__cacheBitmap     = null;
-			sprite.__cacheBitmapData = null;
+			var bmp = new BitmapData(FlxG.width, FlxG.height, false);
+
+			bmp.draw(Lib.current.stage);
+
+			var png = bmp.encode(
+				new Rectangle(0, 0, FlxG.width, FlxG.height),
+				new PNGEncoderOptions()
+			);
+
+			var date = Date.now();
+
+			var file = 'shot_${date.getTime()}.png';
+
+			if (!sys.FileSystem.exists("screenshots"))
+				sys.FileSystem.createDirectory("screenshots");
+
+			sys.io.File.saveBytes('screenshots/$file', png);
 		}
-	}
+		catch (_) {}
 
-	public static function forceGC():Void
-	{
-		openfl.system.System.gc();
-		#if cpp
-		cpp.NativeGc.run(true);
-		cpp.NativeGc.compact();
-		#end
-		#if hl
-		hl.Gc.major();
 		#end
 	}
 
-	public static function getMemoryMB():Float
-		return OpenFlSystem.totalMemory / 1024 / 1024;
-
-	public static function setFramerate(fps:Int):Void
+	public static function setFPS(fps:Int):Void
 	{
-		var clamped = Std.int(FlxMath.bound(fps, MIN_FRAMERATE, MAX_FRAMERATE));
-		FlxG.updateFramerate = clamped;
-		FlxG.drawFramerate   = clamped;
-		ClientPrefs.data.framerate = clamped;
+		fps = Std.int(FlxMath.bound(fps, MIN_FPS, MAX_FPS));
+
+		FlxG.updateFramerate = fps;
+		FlxG.drawFramerate = fps;
+
+		ClientPrefs.data.framerate = fps;
 	}
 
 	public static function setQuality(high:Bool):Void
@@ -413,22 +560,39 @@ class Main extends Sprite
 		Lib.current.stage.quality = high ? StageQuality.HIGH : StageQuality.LOW;
 	}
 
-	public static function takeScreenshot():Void
+	public static function forceGC():Void
 	{
-		#if sys
-		try
-		{
-			var bmd = new openfl.display.BitmapData(FlxG.width, FlxG.height, false);
-			bmd.draw(Lib.current.stage);
-			var png  = bmd.encode(new openfl.geom.Rectangle(0, 0, FlxG.width, FlxG.height),
-				new openfl.display.PNGEncoderOptions());
-			var date = Date.now();
-			var name = 'screenshot_${date.getFullYear()}${date.getMonth()+1}${date.getDate()}_${date.getHours()}${date.getMinutes()}${date.getSeconds()}.png';
-			var dir  = 'screenshots';
-			if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir);
-			sys.io.File.saveBytes('$dir/$name', png);
-		}
-		catch (_) {}
+		OpenFlSystem.gc();
+
+		#if cpp
+		cpp.NativeGc.run(true);
+		cpp.NativeGc.compact();
 		#end
+
+		#if hl
+		hl.Gc.major();
+		#end
+	}
+
+	public static function getMemoryMB():Float
+	{
+		return OpenFlSystem.totalMemory / 1024 / 1024;
+	}
+
+	public static function getUptime():Float
+	{
+		return Timer.stamp() - stateStartTime;
+	}
+
+	static function resetSpriteCache(sprite:Sprite):Void
+	{
+		if (sprite == null)
+			return;
+
+		@:privateAccess
+		{
+			sprite.__cacheBitmap = null;
+			sprite.__cacheBitmapData = null;
+		}
 	}
 }
