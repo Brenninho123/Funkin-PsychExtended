@@ -2,7 +2,7 @@
 
 This Template for Making any Mods and Engines you want, with Mobile Support.
 
-![special](docs/img/special.png)
+![special](art/logo.png)
 
 ## Customization:
 
