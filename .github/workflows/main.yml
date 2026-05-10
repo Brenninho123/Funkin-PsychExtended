@@ -10,15 +10,20 @@ jobs:
   android:
     name: Android
     runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
-      - uses: krdlab/setup-haxe@master
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
@@ -34,17 +39,75 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME
           haxelib run lime config ANDROID_SETUP true
 
+      - name: Verify Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_NDK=$ANDROID_NDK_LATEST_HOME"
+
+          if [ ! -d "$ANDROID_HOME" ]; then
+            echo "Android SDK not found!"
+            exit 1
+          fi
+
+          if [ ! -d "$ANDROID_NDK_LATEST_HOME" ]; then
+            echo "Android NDK not found!"
+            exit 1
+          fi
+
+          sdkmanager --list > /dev/null
+
+      - name: Accept Google Licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Install Required SDK Packages
+        run: |
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0"
+
+      - name: Google Services Verification
+        run: |
+          if [ -f "google-services.json" ]; then
+            echo "google-services.json found"
+          else
+            echo "google-services.json NOT found"
+          fi
+
       - name: Generate Keystore
         run: |
-          keytool -genkeypair -v -keystore key.keystore -storetype JKS \
-            -alias psychengine -storepass psychengine -keypass psychengine \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=PsychEngine, O=Dev, C=BR"
+          keytool -genkeypair -v \
+            -keystore key.keystore \
+            -storetype JKS \
+            -alias psychengine \
+            -storepass psychengine \
+            -keypass psychengine \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=PsychEngine,O=Dev,C=BR"
 
-      - name: Compile
-        run: haxelib run lime build android -release
+      - name: Compile Release APK
+        run: |
+          haxelib run lime build android -release
 
-      - uses: actions/upload-artifact@v4
+      - name: Verify APK
+        run: |
+          APK=$(find export -name "*.apk" | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "APK not generated!"
+            exit 1
+          fi
+
+          echo "APK FOUND:"
+          echo "$APK"
+
+          jarsigner -verify "$APK"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: Android
           path: export/release/android/bin/app/build/outputs/apk/release/*.apk
